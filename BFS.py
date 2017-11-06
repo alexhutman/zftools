@@ -1,6 +1,4 @@
 import Queue
-import ChainedList
-import ZFSearchMetagraph
 
 def BFS_shortest_path_with_edge_labels(G, start_vertex, end_vertex, numVertices):
     # Input: G is a graph, start_vertex and end_vertex are vertices
@@ -16,7 +14,7 @@ def BFS_shortest_path_with_edge_labels(G, start_vertex, end_vertex, numVertices)
     
 
     vertices_to_visit_queue   = Queue.Queue()
-    visited_list              = ChainedList.ChainedList()
+    visited_list              = ChainedList()
     shortest_path             = [] # Initialize a list for the path to be returned at the end
 
     # line below is just for profiling purposes!
@@ -67,7 +65,7 @@ def BFS_shortest_path_with_edge_labels_OLD(G, start_vertex, end_vertex):
     
 
     vertices_to_visit_queue   = Queue.Queue()
-    visited_list              = ChainedList.ChainedList()
+    visited_list              = ChainedList()
     shortest_path             = [] # Initialize a list for the path to be returned at the end
 
     # line below is just for profiling purposes!
