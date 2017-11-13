@@ -106,19 +106,23 @@ class ZFSearchMetagraph:
                 if len(unfilled_neighbors) == 1:
                     vertex_to_fill = next(iter(unfilled_neighbors))
                     vertices_to_recheck.add(vertex_to_fill)
-                    #print vertex, "forces", vertex_to_fill
-                    #print filled_set, "filled set"
-                    #print vertices_to_check, "vertices to czech"
-                    #print vertices_to_recheck, "vertices to reczech"
+#                    print vertex, "forces", vertex_to_fill
+#                    print filled_set, "filled set"
+#                    print vertices_to_check, "vertices to czech"
+#                    print vertices_to_recheck, "vertices to reczech"
                     vertices_to_recheck.update((self.neighbors_dict[vertex_to_fill].intersection(filled_set)) - frozenset([vertex]))
+#                    print list(vertices_to_recheck), "vertices to reczech-post"
                     filled_set.add(vertex_to_fill)
             vertices_to_check = copy(vertices_to_recheck)
+#            print vertices_to_check, "vertices to check - post"
         return filled_set
     
     def neighbors_with_edges(self, meta_vertex):
         # verify that 'meta_vertex' is actually a subset of the vertices
         # of self.primal_graph, to be interpreted as the filled subset
         list_of_neighbors = set() #Set of lists of vertices (neighbors of the graph with initially filled vertices of meta_vertex)
+
+        print "neighbors requested for ", list(meta_vertex)
 
         set_of_neighbors_with_edges = set()
 
@@ -146,4 +150,5 @@ class ZFSearchMetagraph:
 
                 cardinality_of_neighbor_set += 1
 
+        print "neighbors found as", list(set_of_neighbors_with_edges)
         return set_of_neighbors_with_edges
