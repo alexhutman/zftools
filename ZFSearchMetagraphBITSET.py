@@ -56,7 +56,7 @@ class ZFSearchMetagraphBITSET:
         # of self.primal_graph, to be interpreted as the filled subset
         list_of_neighbors = set() #Set of lists of vertices (neighbors of the graph with initially filled vertices of meta_vertex)
         
-        print "neighbors requested for", list(meta_vertex)
+#        print "neighbors requested for", list(meta_vertex)
 
         set_of_neighbors_with_edges = set()
 
@@ -84,6 +84,6 @@ class ZFSearchMetagraphBITSET:
 
                 cardinality_of_neighbor_set += 1
 
-        print "neighbors found as", list(set_of_neighbors_with_edges)
+#        print "neighbors found as", list(set_of_neighbors_with_edges)
         return set_of_neighbors_with_edges
 
