@@ -21,7 +21,7 @@ def BFS_shortest_path_with_edge_labels(G, start_vertex, end_vertex, numVertices)
     G.num_vertices_checked = 0
     
     vertices_to_visit_queue.put(start)
-    visited_list.add_with_parent_and_edge(start,zero_Bitset,zero_Bitset)
+    visited_list.add_with_parent_and_edge(start,None,None)
 
     while not vertices_to_visit_queue.empty():
         curVertex = vertices_to_visit_queue.get()
@@ -41,7 +41,8 @@ def BFS_shortest_path_with_edge_labels(G, start_vertex, end_vertex, numVertices)
                     meta_vertices.append(current_vertex[0])
                     added_vertices.append(current_vertex[1])
                     previous_vertex = visited_list.get_parent(current_vertex[0])
-                    if previous_vertex[0]== zero_Bitset:
+                    if type(previous_vertex[0]) == type(None):
+#                    if previous_vertex[0] == None:
                         at_start_of_path = True
                     else:
                         current_vertex = previous_vertex
@@ -92,7 +93,8 @@ def BFS_shortest_path_with_edge_labels_OLD(G, start_vertex, end_vertex):
                     meta_vertices.append(current_vertex[0])
                     added_vertices.append(current_vertex[1])
                     previous_vertex = visited_list.get_parent(current_vertex[0])
-                    if previous_vertex[0]== None:
+                    if type(previous_vertex[0]) == type(None):
+#                    if previous_vertex[0]== None:
                         at_start_of_path = True
                     else:
                         current_vertex = previous_vertex
