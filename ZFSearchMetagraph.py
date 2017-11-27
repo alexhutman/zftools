@@ -113,8 +113,8 @@ class ZFSearchMetagraph:
                     vertices_to_recheck.update((self.neighbors_dict[vertex_to_fill].intersection(filled_set)) - frozenset([vertex]))
 #                    print list(vertices_to_recheck), "vertices to reczech-post"
                     filled_set.add(vertex_to_fill)
-            vertices_to_check = copy(vertices_to_recheck)
-#            print vertices_to_check, "vertices to check - post"
+            vertices_to_check.clear()
+            vertices_to_check.update(vertices_to_recheck)
         return filled_set
     
     def neighbors_with_edges(self, meta_vertex):

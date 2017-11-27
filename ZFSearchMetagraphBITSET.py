@@ -8,24 +8,19 @@ class ZFSearchMetagraphBITSET:
         self.degree_list = graph_for_zero_forcing.degree()
         self.num_vertices = graph_for_zero_forcing.num_verts()
         self.vertices_set = Bitset('1'*self.num_vertices)
-        self.zero_bitset = Bitset(capacity=self.num_vertices)
-        self.fr_zero_bitset = FrozenBitset(capacity=self.num_vertices)
         self.neighbors_dict = {}
         for i in self.vertices_set:
-            self.neighbors_dict[i] = Bitset(graph_for_zero_forcing.neighbors(i)).union(self.zero_bitset)
+            self.neighbors_dict[i] = Bitset(graph_for_zero_forcing.neighbors(i))
         
         # member below is just for profiling purposes!
         self.num_vertices_checked = 0
         
-    def zero_fr_bitset(self, desired_length):
-        return FrozenBitset('0' * desired_length)
-
-    
     def fill_one_vx_and_close(self, initially_filled_set, new_vx):
         all_vertices = self.vertices_set
-        filled_set = Bitset(initially_filled_set).union(self.zero_bitset)
+        filled_set = Bitset(initially_filled_set)
         new_vx_filled_neighbors = self.neighbors_dict[new_vx].intersection(filled_set)
-        vertices_to_check = new_vx_filled_neighbors.union(Bitset([new_vx]).union(self.zero_bitset))
+#        vertices_to_check = new_vx_filled_neighbors.add(new_vx)
+        vertices_to_check = new_vx_filled_neighbors.union(Bitset([new_vx]))
         
         vertices_to_recheck = Bitset(capacity=self.num_vertices);
         while not vertices_to_check.isempty():
@@ -46,8 +41,8 @@ class ZFSearchMetagraphBITSET:
                     vertices_to_recheck.update((self.neighbors_dict[vertex_to_fill].intersection(filled_set)) - Bitset([vertex]))
 #                    print list(vertices_to_recheck), "vertices to reczech-post"
                     filled_set.add(vertex_to_fill)
-            vertices_to_check = copy(vertices_to_recheck)
-#            print vertices_to_check, "vertices to check - post"
+            vertices_to_check.clear()
+            vertices_to_check.update(vertices_to_recheck)
         return filled_set
     
     
@@ -63,15 +58,17 @@ class ZFSearchMetagraphBITSET:
         set_of_all_primal_vertices = self.vertices_set
         cardinality_of_neighbor_set = 0
 
-        initially_unfilled_set = set_of_all_primal_vertices - Bitset(meta_vertex).union(self.zero_bitset) # compute unfilled set
-        candidate_set = copy(initially_unfilled_set)
+        initially_unfilled_set = set_of_all_primal_vertices - Bitset(meta_vertex) # compute unfilled set
+        candidate_set = Bitset('0')
+        candidate_set.update(initially_unfilled_set)
+#        candidate_set = copy(initially_unfilled_set)
 
         for new_vx_to_fill in set(initially_unfilled_set): # for each vertex that wasn't already filled...
             if new_vx_to_fill not in candidate_set:
                 continue;
 #            current_closure = self.some_method(meta_vertex, new_vx_to_fill)  #add just new_vx_to_fill to set meta_vertex and then close
             
-            filled_in_set_current = Bitset(meta_vertex).union(self.zero_bitset) # ...store copy of original filled set...
+            filled_in_set_current = Bitset(meta_vertex) # ...store copy of original filled set...
             filled_in_set_current.add(new_vx_to_fill) # ..then fill in that one vertex to get new filled set
 
             # close this new filled set under forcing
