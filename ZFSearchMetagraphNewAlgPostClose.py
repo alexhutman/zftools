@@ -14,6 +14,37 @@ class ZFSearchMetagraphNewAlg:
         # member below is just for profiling purposes!
         self.num_vertices_checked = 0
 
+    def extend_closure(self, initially_filled_subset, vxs_to_add):
+        all_vertices = list(self.vertices_set)
+        filled_set = set(initially_filled_subset.union(vxs_to_add))
+
+        vertices_to_check = set(vxs_to_add)
+        for v in vxs_to_add:
+            vertices_to_check.update(self.neighbors_dict[v].intersection(filled_set))
+        
+#        return self.close_subset_under_forcing(filled_set)
+            
+        vertices_to_recheck = set()
+        while vertices_to_check:
+            #print "now will check", vertices_to_check
+            vertices_to_recheck.clear()
+            for vertex in vertices_to_check:
+                self.num_vertices_checked += 1
+
+                filled_neighbors = self.neighbors_dict[vertex].intersection(filled_set)
+                unfilled_neighbors = self.neighbors_dict[vertex] - filled_neighbors
+                if len(unfilled_neighbors) == 1:
+                    vertex_to_fill = next(iter(unfilled_neighbors))
+                    vertices_to_recheck.add(vertex_to_fill)
+                    #print vertex, "forces", vertex_to_fill
+                    #print filled_set, "filled set"
+                    #print vertices_to_check, "vertices to czech"
+                    #print vertices_to_recheck, "vertices to reczech"
+                    vertices_to_recheck.update((self.neighbors_dict[vertex_to_fill].intersection(filled_set)) - frozenset([vertex]))
+                    filled_set.add(vertex_to_fill)
+            vertices_to_check = copy(vertices_to_recheck)
+        return filled_set
+
     def close_subset_under_forcing(self, initially_filled_subset):
         all_vertices = list(self.vertices_set)
         filled_set = initially_filled_subset

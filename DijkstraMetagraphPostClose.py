@@ -45,10 +45,19 @@ def dijkstra(metagraph, start, target):
         parent = uv[2]
         vx_that_is_to_force = uv[3]
 
-        vx_and_neighbors = set(parent) if parent != None else set([])
+#        vx_and_neighbors = set(parent) if parent != None else set([])
+#        if vx_that_is_to_force != None:
+#            vx_and_neighbors = vx_and_neighbors.union(set(metagraph.neighbors_dict[vx_that_is_to_force])).union(set([vx_that_is_to_force]))
+#        current = frozenset(metagraph.close_subset_under_forcing(vx_and_neighbors))
+
+        previous_closure = set(parent) if parent != None else set([])
+        vx_and_neighbors = set([])
         if vx_that_is_to_force != None:
-            vx_and_neighbors = vx_and_neighbors.union(set(metagraph.neighbors_dict[vx_that_is_to_force])).union(set([vx_that_is_to_force]))
-        current = frozenset(metagraph.close_subset_under_forcing(vx_and_neighbors))
+            vx_and_neighbors = set([vx_that_is_to_force])
+            vx_and_neighbors.update(set(metagraph.neighbors_dict[vx_that_is_to_force]))
+        current = frozenset(metagraph.extend_closure(previous_closure, vx_and_neighbors))
+
+
 #        print "closure calculated as", current
         
 #        print "result of forcing on",vx_and_neighbors ,"after forcing", current
