@@ -51,6 +51,11 @@ def dijkstra(metagraph, start, target):
 #        current = frozenset(metagraph.close_subset_under_forcing(vx_and_neighbors))
 
         previous_closure = set(parent) if parent != None else set([])
+
+		# the code below currently just takes the vertex and its neighborhood
+		# IMPROVEMENT: have it calculate JUST exactly the vertices that need to be filled in
+		# manually... leave out ones int he neighborhood that are already filled...leave out
+		# the vertex itself if IT'S already filled... etc. (like build_zf_set does somehow)
         vx_and_neighbors = set([])
         if vx_that_is_to_force != None:
             vx_and_neighbors = set([vx_that_is_to_force])
@@ -58,9 +63,6 @@ def dijkstra(metagraph, start, target):
         current = frozenset(metagraph.extend_closure(previous_closure, vx_and_neighbors))
 
 
-#        print "closure calculated as", current
-        
-#        print "result of forcing on",vx_and_neighbors ,"after forcing", current
         
         # whether vertex is in 'previous' is proxy for if it has been visited
         if current in previous:
@@ -74,9 +76,14 @@ def dijkstra(metagraph, start, target):
 #        if superset_has_been_visited:
 #            print "yay"
 #            continue
-            
-            
-        previous[current] = (parent, vx_that_is_to_force)
+        
+        # get the initial set that led to parent
+        former_initial_set = previous[parent]
+        # add the new vertices that we manually fill to get the bigger closure
+        	# look at what is in parent
+        	# also have vertex that is to force
+        # store that new initial set in the previous dictionary for the new closure    
+        previous[current] = new_initial_set
 #        print "stored", parent, "as predecessor of", current
 
         if current == target: # We have found the target vertex, can stop searching now
