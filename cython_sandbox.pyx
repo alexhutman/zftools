@@ -4,6 +4,8 @@ This code is just an attempt to do something in Sage with graphs that can run co
 
 from sage.graphs.all import Graph 
 include "sage/data_structures/bitset.pxi"
+
+import heapq
            
 
 
@@ -28,6 +30,9 @@ def compute_from_graph(graph):
 	
 	print "This is a graph!"
 	
+	# maybe we should also verify that the vertex names are INTEGERS
+	# (if not then call relabel or something)
+	
 	num_vertices = graph.num_verts()
 	
 	# create pointer to bitset array with neighborhoods
@@ -47,9 +52,16 @@ cdef do_compiled_stuff_with_graph(int n, bitset_s *neighborhood_array):
 
 	print "Graph has", n, "vertices!"
 
-	print "Here are the neighborhoods as bitsets:"
+	# Now let's try to heapsort the vertices by degree, just for
+	# something to do that uses a queue (hey that rhymes!)
+	new_q = []
 	for v in range(n):
-		print bitset_chars(s, &neighborhood_array[v])
-#		print j
+		degree_of_v = bitset_len(&neighborhood_array[v])
+		heapq.heappush(new_q, (degree_of_v, v) )
+	
+	while len(new_q) > 0:
+		degree, vertex = heapq.heappop(new_q);
+		print "Vertex", vertex, "has degree", degree
+
 	return
 	
