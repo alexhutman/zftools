@@ -42,14 +42,14 @@ def compute_from_graph(graph):
 	# return result
 
 
-cdef do_compiled_stuff_with_graph(int n, bitset_s *neighborhood_bitsets):
+cdef do_compiled_stuff_with_graph(int n, bitset_s *neighborhood_array):
 	cdef char* s = NULL
 
 	print "Graph has", n, "vertices!"
 
 	print "Here are the neighborhoods as bitsets:"
 	for v in range(n):
-		print bitset_chars(s, &neighborhood_bitsets[v])
+		print bitset_chars(s, &neighborhood_array[v])
 #		print j
 	return
 	
