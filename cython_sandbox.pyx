@@ -75,21 +75,24 @@ cdef do_compiled_stuff_with_graph(int n, bitset_s* neighborhood_array):
 #		print "Vertex", vertex, "has degree", degree
 
 	# try finding the meta-graph neighbors of {1,2,3} or something
-	cdef bitset_t	one_two_three_set
+	cdef bitset_t	initial_closure
+	cdef bitset_t	new_vxs_to_closure
 	
-	bitset_init(one_two_three_set, n)
-	bitset_clear(one_two_three_set)
-	bitset_add(one_two_three_set, 1)
-	bitset_add(one_two_three_set, 2)
-	bitset_add(one_two_three_set, 3)
-
-	print "Okay imagine {1,2,3} is filled.  Then..."
-
-	nbrs = metaneighbors_ordinary_zf(n, neighborhood_array, one_two_three_set)
+	bitset_init(initial_closure, n)
+	bitset_clear(initial_closure,)
+	bitset_init(new_vxs_to_closure, n)
+	bitset_clear(new_vxs_to_closure)
 	
-	print
-	for vx in nbrs:
-		print "...to get", vx[0], "to force add", list(set(vx[1]))
+	bitset_add(initial_closure, 4)
+	bitset_add(initial_closure, 5)
+	
+	bitset_add(new_vxs_to_closure, 0)
+
+#	print "Okay imagine {1,2,3} is filled.  Then..."
+
+	new_closure = extend_closure_ordinary_ZF(n, neighborhood_array, initial_closure, new_vxs_to_closure)
+	
+	print "{4,5} plus 0 closes to", new_closure
 
 	return
 
@@ -150,19 +153,19 @@ cdef list metaneighbors_ordinary_zf(int n, bitset_s* neighborhood_array, bitset_
 	return list_of_metavx_neighbors
 
 
-def do_dijkstra_ZF(graph):
-	return graph
 
 
 
 cdef list extend_closure_ordinary_ZF(int n, bitset_s* neighborhood_array, bitset_t previous_closure, bitset_t vxs_to_add):
 	cdef bitset_t filled_vertices
+	cdef bitset_t unfilled_vertices
 	cdef bitset_t filled_neighbors
 	cdef bitset_t unfilled_neighbors
 	cdef bitset_t vxs_to_check
 	cdef bitset_t vxs_to_recheck
 	
 	bitset_init(filled_vertices, n)
+	bitset_init(unfilled_vertices, n)
 	bitset_init(filled_neighbors, n)
 	bitset_init(unfilled_neighbors, n)
 	bitset_init(vxs_to_check, n)
@@ -170,6 +173,7 @@ cdef list extend_closure_ordinary_ZF(int n, bitset_s* neighborhood_array, bitset
 	
 	# initialize new filled set to originally filled plus new vertices
 	bitset_union(filled_vertices, previous_closure, vxs_to_add)
+	bitset_complement(unfilled_vertices, filled_vertices)
 	
 	# let recheck set be vertices to add...
 	bitset_copy(vxs_to_recheck, vxs_to_add)
@@ -177,15 +181,18 @@ cdef list extend_closure_ordinary_ZF(int n, bitset_s* neighborhood_array, bitset
 	# ...then add each filled neighbor
 	# for neighborhood of each vertex to add
 	i = 0
-	while i != -1:
+	while True:
 		next_vx = bitset_next(vxs_to_add, i)
 		i += 1
+		if next_vx == -1:
+			break
 
 		# get its filled neighbors
 		bitset_intersection(filled_neighbors, &neighborhood_array[next_vx], filled_vertices)
 	
 		# union with its filled neighbors
 		bitset_union(vxs_to_recheck, vxs_to_recheck, filled_neighbors)
+
 	
 	# while vertices to recheck is not empty
 	while not bitset_isempty(vxs_to_recheck):
@@ -195,26 +202,32 @@ cdef list extend_closure_ordinary_ZF(int n, bitset_s* neighborhood_array, bitset
 		
 		# for each vertex to check
 		i = 0
-		while i != -1:
+		while True:
 			next_vx = bitset_next(vxs_to_check, i)
+			i += 1
+			if next_vx == -1:
+				break
+
 			# verify it really is filled
 			if not bitset_in(filled_vertices, next_vx):
 				print "Attempt to check unfilled vertex for forcing!"
-			i += 1
+				break
 
 			# count number of its unfilled neighbors
-			bitset_intersection(filled_neighbors, &neighborhood_array[next_vx], filled_vertices)
-			bitset_complement(unfilled_neighbors, filled_neighbors)
+			bitset_intersection(unfilled_neighbors, &neighborhood_array[next_vx], unfilled_vertices)
 			
 			# if exactly one, fill that sucker in
 			if bitset_len(unfilled_neighbors) == 1:
+				if next_vx == 0:
+					print "yay"
 				lone_unfilled_neighbor = bitset_pop(unfilled_neighbors)
 				bitset_add(filled_vertices, lone_unfilled_neighbor)
+				bitset_remove(unfilled_vertices, lone_unfilled_neighbor)
 
-			# add new filled guy and its filled neighbors to the recheck set
-			bitset_intersection(filled_neighbors, &neighborhood_array[lone_unfilled_neighbor], filled_vertices)
-			bitset_union(vxs_to_recheck, vxs_to_recheck, filled_neighbors)
-			bitset_add(vxs_to_recheck, lone_unfilled_neighbor)
+				# add new filled guy and its filled neighbors to the recheck set
+				bitset_intersection(filled_neighbors, &neighborhood_array[lone_unfilled_neighbor], filled_vertices)
+				bitset_union(vxs_to_recheck, vxs_to_recheck, filled_neighbors)
+				bitset_add(vxs_to_recheck, lone_unfilled_neighbor)
 	
 	new_closure_Bitset = FrozenBitset(capacity=n)
 	# the code below is a 'hack' appearing in the wavefront code
@@ -222,6 +235,7 @@ cdef list extend_closure_ordinary_ZF(int n, bitset_s* neighborhood_array, bitset
 	bitset_copy(&new_closure_Bitset._bitset[0], filled_vertices)
 	
 	bitset_free(filled_vertices)
+	bitset_free(unfilled_vertices)
 	bitset_free(filled_neighbors)
 	bitset_free(unfilled_neighbors)
 	bitset_free(vxs_to_check)
