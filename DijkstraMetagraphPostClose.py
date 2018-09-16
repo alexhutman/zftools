@@ -32,7 +32,7 @@ def dijkstra(metagraph, start, target):
     DijkstraMG = metagraph
 
     previous = {}
-    unvisited_queue = [(0, start, None, None)]
+    unvisited_queue = [(0, None, None)]
     heapq.heapify(unvisited_queue)
 
     done = False
@@ -41,9 +41,8 @@ def dijkstra(metagraph, start, target):
 #        print "just popped", uv
         
         current_distance = uv[0]
-        current_pre_closure = uv[1]
-        parent = uv[2]
-        vx_that_is_to_force = uv[3]
+        parent = uv[1]
+        vx_that_is_to_force = uv[2]
 
 #        vx_and_neighbors = set(parent) if parent != None else set([])
 #        if vx_that_is_to_force != None:
@@ -87,7 +86,6 @@ def dijkstra(metagraph, start, target):
 
         for neighbor_tuple in metagraph.neighbors_with_edges(current):
 #            print "neighbor of", current, ":", neighbor_tuple, "with cost", neighbor_tuple[0]
-            next_vx = neighbor_tuple[2]
             what_forced = neighbor_tuple[1]
             cost_of_making_it_force = neighbor_tuple[0]
             
@@ -95,7 +93,7 @@ def dijkstra(metagraph, start, target):
 #                continue
             new_dist = current_distance + cost_of_making_it_force
             
-            heapq.heappush(unvisited_queue, (new_dist, next_vx, current, what_forced) )
+            heapq.heappush(unvisited_queue, (new_dist, current, what_forced))
             
             #print "Pushing: ", (next_vx, new_dist, current, what_forced)
         

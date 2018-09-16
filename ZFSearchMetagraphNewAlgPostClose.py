@@ -134,7 +134,7 @@ class ZFSearchMetagraphNewAlg:
 #            current_closure = frozenset(self.close_subset_under_forcing(vx_and_neighbors))
             cost = self.calculate_cost(meta_vertex, new_vx_to_make_force)
             if cost > 0:
-                tuple_of_neighbor_with_edge = (cost, new_vx_to_make_force, meta_vertex)
+                tuple_of_neighbor_with_edge = (cost, new_vx_to_make_force)
                 set_of_neighbors_with_edges.add(tuple_of_neighbor_with_edge)
         return set_of_neighbors_with_edges
 
