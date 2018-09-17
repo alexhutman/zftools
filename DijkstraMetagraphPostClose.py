@@ -4,12 +4,12 @@ import random
 
 DijkstraMG = None
 
-def shortest(v, path_so_far, predecessor_list):
+def shortest(v, path_so_far, predecessor_list, start):
     predecessor_of_v = predecessor_list[v]
     path_so_far.insert(0,predecessor_of_v)
     
-    if predecessor_of_v[0] != frozenset([]):
-        shortest(predecessor_of_v[0], path_so_far, predecessor_list)
+    if predecessor_of_v[0] != start:
+        shortest(predecessor_of_v[0], path_so_far, predecessor_list, start)
     return path_so_far
 
 def build_zf_set(final_metavx_list):
@@ -33,7 +33,7 @@ def dijkstra(metagraph, start, target):
     DijkstraMG = metagraph
 
     previous = {}
-    unvisited_queue = [(0, frozenset([]), None)]
+    unvisited_queue = [(0, start, None)]
     heapq.heapify(unvisited_queue)
 
     done = False
@@ -103,6 +103,6 @@ def dijkstra(metagraph, start, target):
     temp = [(target, None)]
 #    print "previous: ..."
 #    print previous
-    shortest_path = shortest(target, temp, previous)
+    shortest_path = shortest(target, temp, previous, start)
     print shortest_path
     return build_zf_set(shortest_path)
