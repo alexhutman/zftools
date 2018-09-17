@@ -6,8 +6,9 @@ DijkstraMG = None
 
 def shortest(v, path_so_far, predecessor_list):
     predecessor_of_v = predecessor_list[v]
-    if predecessor_of_v[0] != None:
-        path_so_far.insert(0,predecessor_of_v)
+    path_so_far.insert(0,predecessor_of_v)
+    
+    if predecessor_of_v[0] != frozenset([]):
         shortest(predecessor_of_v[0], path_so_far, predecessor_list)
     return path_so_far
 
@@ -32,7 +33,7 @@ def dijkstra(metagraph, start, target):
     DijkstraMG = metagraph
 
     previous = {}
-    unvisited_queue = [(0, None, None)]
+    unvisited_queue = [(0, frozenset([]), None)]
     heapq.heapify(unvisited_queue)
 
     done = False
@@ -49,7 +50,7 @@ def dijkstra(metagraph, start, target):
 #            vx_and_neighbors = vx_and_neighbors.union(set(metagraph.neighbors_dict[vx_that_is_to_force])).union(set([vx_that_is_to_force]))
 #        current = frozenset(metagraph.close_subset_under_forcing(vx_and_neighbors))
 
-        previous_closure = set(parent) if parent != None else set([])
+        previous_closure = set(parent)
         vx_and_neighbors = set([])
         if vx_that_is_to_force != None:
             vx_and_neighbors = set([vx_that_is_to_force])
