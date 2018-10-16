@@ -1,3 +1,5 @@
+from sage.all import *
+
 def calculate_all_closures(ourGraph):
     
     print "vertices :", ourGraph.vertices()
