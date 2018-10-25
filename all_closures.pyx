@@ -1,4 +1,5 @@
-from sage.all import *
+from sage.graphs.all import Graph
+from sage.combinat.all import Subsets
 
 include "sage/data_structures/bitset.pxi"
 
@@ -9,15 +10,20 @@ def calculate_all_closures(ourGraph):
     print "vertices :", ourGraph.vertices()
     
     num_vertices = ourGraph.num_verts()
-
+    
     # create pointer to bitset array with neighborhoods
     cdef bitset_t *neighborhood_array = <bitset_t*> sig_malloc(num_vertices*sizeof(bitset_t))
+
+
+    
     for v in range(num_vertices):
         bitset_init(neighborhood_array[v], num_vertices)
         bitset_clear(neighborhood_array[v])
-        for w in graph.neighbors(v):
+        for w in ourGraph.neighbors(v):
             bitset_add(neighborhood_array[v], w)    
-    
+
+            
+            
     neighbors_dict = {}
     for i in ourGraph.vertices():
         neighbors_dict[i] = frozenset(ourGraph.neighbors(i)) 
@@ -28,14 +34,15 @@ def calculate_all_closures(ourGraph):
     cdef bitset_t empty_set
     bitset_init(empty_set,num_vertices)
     bitset_clear(empty_set)
-    
+            
     for S in Subsets(ourGraph.vertices()):
         bitset_clear(current_set)
         for i in S:
             bitset_add(current_set, i)
         extend_closure(num_vertices, neighborhood_array, empty_set, current_set)
+
         
-cdef extend_closure(int num_verts, bitset_t* neighbors_array, bitset_t initially_filled_subset, bitset_t vxs_to_add):
+cdef int extend_closure(int num_verts, bitset_t* neighbors_array, bitset_t initially_filled_subset, bitset_t vxs_to_add):
     cdef bitset_t filled_set
     cdef bitset_t vertices_to_check
     cdef bitset_t filled_neighbors
@@ -49,8 +56,8 @@ cdef extend_closure(int num_verts, bitset_t* neighbors_array, bitset_t initially
     bitset_init(filled_neighbors, num_verts)
     bitset_init(unfilled_neighbors, num_verts)
     bitset_init(vertices_to_recheck, num_verts)
-    bitset_init(filled_neighbors_of_vx_to_fill, num_verts)
-    
+    bitset_init(filled_neighbors_of_vx_to_fill, num_verts)    
+ 
     bitset_union(filled_set, initially_filled_subset, vxs_to_add)
 #    filled_set = initially_filled_subset.union(vxs_to_add)
 
@@ -68,6 +75,7 @@ cdef extend_closure(int num_verts, bitset_t* neighbors_array, bitset_t initially
     bitset_clear(vertices_to_recheck)
     while not bitset_isempty(vertices_to_check):
         #print "now will check", vertices_to_check
+        #print bitset_string(vertices_to_check)
         bitset_clear(vertices_to_recheck)
         for vertex in range(num_verts):
             if bitset_in(vertices_to_check, vertex):
@@ -92,7 +100,16 @@ cdef extend_closure(int num_verts, bitset_t* neighbors_array, bitset_t initially
     #                vertices_to_recheck.update((neighbors_dict[vertex_to_fill].intersection(filled_set)) - frozenset([vertex]))
                 
                     bitset_add(filled_set, vertex_to_fill)
-#        bitset_copy(vertices_to_check, vertices_to_recheck)
-#        bitset_copy(vertices_to_check, vertices_to_recheck)
-#    return filled_set
-    return 0
+        bitset_copy(vertices_to_check, vertices_to_recheck)
+
+    bitset_free(filled_set)
+    bitset_free(vertices_to_check)
+    bitset_free(filled_neighbors)
+    bitset_free(unfilled_neighbors)
+    bitset_free(vertices_to_recheck)
+    bitset_free(filled_neighbors_of_vx_to_fill)
+        
+        
+        #        bitset_copy(vertices_to_check, vertices_to_recheck)
+    return 100
+#    return
