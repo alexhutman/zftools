@@ -13,8 +13,6 @@ def calculate_all_closures(ourGraph):
     
     # create pointer to bitset array with neighborhoods
     cdef bitset_t *neighborhood_array = <bitset_t*> sig_malloc(num_vertices*sizeof(bitset_t))
-
-
     
     for v in range(num_vertices):
         bitset_init(neighborhood_array[v], num_vertices)

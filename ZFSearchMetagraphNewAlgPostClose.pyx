@@ -1,13 +1,19 @@
-from sage.all import *
+#from sage.all import *
+from sage.graphs.all import Graph
+
+include "sage/data_structures/bitset.pxi"
+
+#include "cysignals/memory.pxi"
 
 # Define metagraph class in Python
-class ZFSearchMetagraphNewAlg:
-
+cdef class ZFSearchMetagraphNewAlg:
+    cdef set vertices_set
+    cdef public dict neighbors_dict
+    cdef int num_vertices
+    cdef int num_vertices_checked
+    cdef bitset_t *neighborhood_array
+    
     def __init__(self, graph_for_zero_forcing):
-        cdef int num_vertices
-        
-        self.primal_graph = graph_for_zero_forcing
-        self.degree_list = graph_for_zero_forcing.degree()
         self.vertices_set = set(graph_for_zero_forcing.vertices())
         self.neighbors_dict = {}
         
@@ -16,22 +22,23 @@ class ZFSearchMetagraphNewAlg:
         for i in self.vertices_set:
             self.neighbors_dict[i] = frozenset(graph_for_zero_forcing.neighbors(i))
 
+        # create pointer to bitset array with neighborhoods
+        cdef bitset_t *neighborhood_array = <bitset_t*> sig_malloc(self.num_vertices*sizeof(bitset_t))
+            
         # member below is just for profiling purposes!
         self.num_vertices_checked = 0
-
-    def extend_closure(self, initially_filled_subset, vxs_to_add):
+    
+    cpdef extend_closure(self, set initially_filled_subset, set vxs_to_add):
+        cdef list all_vertices
+        cdef set filled_set, vertices_to_check, vertices_to_recheck
+        
         all_vertices = list(self.vertices_set)
         filled_set = set(initially_filled_subset.union(vxs_to_add))
 
         vertices_to_check = set(vxs_to_add)
-        
-        if self.num_vertices < 30:
-            print "ok"
-        
+
         for v in vxs_to_add:
             vertices_to_check.update(self.neighbors_dict[v].intersection(filled_set))
-        
-#        return self.close_subset_under_forcing(filled_set)
             
         vertices_to_recheck = set()
         while vertices_to_check:
@@ -45,72 +52,13 @@ class ZFSearchMetagraphNewAlg:
                 if len(unfilled_neighbors) == 1:
                     vertex_to_fill = next(iter(unfilled_neighbors))
                     vertices_to_recheck.add(vertex_to_fill)
-                    #print vertex, "forces", vertex_to_fill
-                    #print filled_set, "filled set"
-                    #print vertices_to_check, "vertices to czech"
-                    #print vertices_to_recheck, "vertices to reczech"
                     vertices_to_recheck.update((self.neighbors_dict[vertex_to_fill].intersection(filled_set)) - frozenset([vertex]))
                     filled_set.add(vertex_to_fill)
-            vertices_to_check = copy(vertices_to_recheck)
+            vertices_to_check = set.copy(vertices_to_recheck)
         return filled_set
+    
 
-    def close_subset_under_forcing(self, initially_filled_subset):
-        all_vertices = list(self.vertices_set)
-        filled_set = initially_filled_subset
-        vertices_to_check = set(filled_set)
-
-        vertices_to_recheck = set()
-        while vertices_to_check:
-            #print "now will check", vertices_to_check
-            vertices_to_recheck.clear()
-            for vertex in vertices_to_check:
-                self.num_vertices_checked += 1
-
-                filled_neighbors = self.neighbors_dict[vertex].intersection(filled_set)
-                unfilled_neighbors = self.neighbors_dict[vertex] - filled_neighbors
-                if len(unfilled_neighbors) == 1:
-                    vertex_to_fill = next(iter(unfilled_neighbors))
-                    vertices_to_recheck.add(vertex_to_fill)
-                    #print vertex, "forces", vertex_to_fill
-                    #print filled_set, "filled set"
-                    #print vertices_to_check, "vertices to czech"
-                    #print vertices_to_recheck, "vertices to reczech"
-                    vertices_to_recheck.update((self.neighbors_dict[vertex_to_fill].intersection(filled_set)) - frozenset([vertex]))
-                    filled_set.add(vertex_to_fill)
-            vertices_to_check = copy(vertices_to_recheck)
-        return filled_set
-
-
-    def fill_one_vx_and_close(self, initially_filled_set, new_vx):
-        all_vertices = list(self.vertices_set)
-        filled_set = set(initially_filled_set)
-        new_vx_filled_neighbors = self.neighbors_dict[new_vx].intersection(filled_set)
-        vertices_to_check = set([new_vx]).union(new_vx_filled_neighbors)
-
-        vertices_to_recheck = set();
-        while vertices_to_check:
-            #print "now will check", vertices_to_check
-            vertices_to_recheck.clear()
-            for vertex in vertices_to_check:
-                self.num_vertices_checked += 1
-
-                filled_neighbors = self.neighbors_dict[vertex].intersection(filled_set)
-                unfilled_neighbors = self.neighbors_dict[vertex] - filled_neighbors
-                if len(unfilled_neighbors) == 1:
-                    vertex_to_fill = next(iter(unfilled_neighbors))
-                    vertices_to_recheck.add(vertex_to_fill)
-#                    print vertex, "forces", vertex_to_fill
-#                    print filled_set, "filled set"
-#                    print vertices_to_check, "vertices to czech"
-#                    print vertices_to_recheck, "vertices to reczech"
-                    vertices_to_recheck.update((self.neighbors_dict[vertex_to_fill].intersection(filled_set)) - frozenset([vertex]))
-#                    print list(vertices_to_recheck), "vertices to reczech-post"
-                    filled_set.add(vertex_to_fill)
-            vertices_to_check.clear()
-            vertices_to_check.update(vertices_to_recheck)
-        return filled_set
-
-    def calculate_cost(self, meta_vertex, vertex_to_calc_cost):
+    cdef calculate_cost(self, frozenset meta_vertex, int vertex_to_calc_cost):
         unfilled_neighbors = set(self.neighbors_dict[vertex_to_calc_cost])
         unfilled_neighbors = unfilled_neighbors - meta_vertex
         numUnfilledNeighbors = len(unfilled_neighbors)
@@ -129,18 +77,15 @@ class ZFSearchMetagraphNewAlg:
         return cost
 
 
-    def neighbors_with_edges(self, meta_vertex):
+    cpdef neighbors_with_edges(self, frozenset meta_vertex):
         # verify that 'meta_vertex' is actually a subset of the vertices
         # of self.primal_graph, to be interpreted as the filled subset
         #print "neighbors requested for ", list(meta_vertex)
 
-        set_of_neighbors_with_edges = set()
-
-#------------------------------------------------------------------------------------------------------------------------------
+        cdef set set_of_neighbors_with_edges = set()
+        cdef int new_vx_to_make_force
 
         for new_vx_to_make_force in self.vertices_set:
-#            vx_and_neighbors = set([new_vx_to_make_force]).union(set(self.neighbors_dict[new_vx_to_make_force])).union(meta_vertex)
-#            current_closure = frozenset(self.close_subset_under_forcing(vx_and_neighbors))
             cost = self.calculate_cost(meta_vertex, new_vx_to_make_force)
             if cost > 0:
                 tuple_of_neighbor_with_edge = (cost, new_vx_to_make_force)
