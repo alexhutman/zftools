@@ -11,11 +11,11 @@ cdef class ZFSearchMetagraphNewAlg:
     cdef public dict neighbors_dict
     cdef int num_vertices
     cdef int num_vertices_checked
-    cdef bitset_t *neighborhood_array
+    cdef bitset_t *neighborhood_array 
     
     def __cinit__(self, graph_for_zero_forcing):
         self.num_vertices = graph_for_zero_forcing.num_verts()
-        self.neighborhood_array = <bitset_t*> sig_malloc(self.num_vertices*sizeof(bitset_t))
+        self.neighborhood_array = <bitset_t*> sig_malloc(self.num_vertices*sizeof(bitset_t)) #ALLOCATE NEIGHBORHOOD_ARRAY
     
     def __init__(self, graph_for_zero_forcing):
         self.vertices_set = set(graph_for_zero_forcing.vertices())
@@ -31,6 +31,9 @@ cdef class ZFSearchMetagraphNewAlg:
             
         # member below is just for profiling purposes!
         self.num_vertices_checked = 0
+        
+    def __dealloc__(self):
+         sig_free(self.neighborhood_array) #DEALLOCATE NEIGHBORHOOD_ARRAY
     
     cpdef extend_closure(self, set initially_filled_subset, set vxs_to_add):
         cdef list all_vertices
