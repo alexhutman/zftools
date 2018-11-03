@@ -3,7 +3,7 @@ from sage.graphs.all import Graph
 
 include "sage/data_structures/bitset.pxi"
 
-#include "cysignals/memory.pxi"
+include "cysignals/memory.pxi"
 
 # Define metagraph class in Python
 cdef class ZFSearchMetagraphNewAlg:
@@ -13,17 +13,21 @@ cdef class ZFSearchMetagraphNewAlg:
     cdef int num_vertices_checked
     cdef bitset_t *neighborhood_array
     
+    def __cinit__(self, graph_for_zero_forcing):
+        self.num_vertices = graph_for_zero_forcing.num_verts()
+        self.neighborhood_array = <bitset_t*> sig_malloc(self.num_vertices*sizeof(bitset_t))
+    
     def __init__(self, graph_for_zero_forcing):
         self.vertices_set = set(graph_for_zero_forcing.vertices())
         self.neighbors_dict = {}
-        
-        self.num_vertices = len(self.vertices_set)
         
         for i in self.vertices_set:
             self.neighbors_dict[i] = frozenset(graph_for_zero_forcing.neighbors(i))
 
         # create pointer to bitset array with neighborhoods
-        cdef bitset_t *neighborhood_array = <bitset_t*> sig_malloc(self.num_vertices*sizeof(bitset_t))
+        bitset_init(self.neighborhood_array[0], self.num_vertices)
+        if(bitset_isempty(self.neighborhood_array[0])):
+            print("Array successfully created/initialized (only 1st index for now)")
             
         # member below is just for profiling purposes!
         self.num_vertices_checked = 0
