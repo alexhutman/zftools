@@ -7,11 +7,14 @@ include "cysignals/memory.pxi"
 
 # Define metagraph class in Python
 cdef class ZFSearchMetagraphNewAlg:
+    cdef int num_vertices, num_vertices_checked
+    cdef bitset_t *neighborhood_array 
     cdef set vertices_set
     cdef public dict neighbors_dict
-    cdef int num_vertices
-    cdef int num_vertices_checked
-    cdef bitset_t *neighborhood_array 
+    
+    
+    # Temp variable(s) for __init__ 
+    cdef frozenset temp_vertex_neighbors
     
     def __cinit__(self, graph_for_zero_forcing):
         self.num_vertices = graph_for_zero_forcing.num_verts()
@@ -22,24 +25,25 @@ cdef class ZFSearchMetagraphNewAlg:
         self.neighbors_dict = {}
         
         for i in self.vertices_set:
-            self.neighbors_dict[i] = frozenset(graph_for_zero_forcing.neighbors(i))
+            temp_vertex_neighbors = frozenset(graph_for_zero_forcing.neighbors(i))
+            self.neighbors_dict[i] = temp_vertex_neighbors
 
         # create pointer to bitset array with neighborhoods
         bitset_init(self.neighborhood_array[0], self.num_vertices)
         if(bitset_isempty(self.neighborhood_array[0])):
             print("Array successfully created/initialized (only 1st index for now)")
-            
-        # member below is just for profiling purposes!
+        
+        #The variable below is just for profiling purposes!
         self.num_vertices_checked = 0
         
     def __dealloc__(self):
          sig_free(self.neighborhood_array) #DEALLOCATE NEIGHBORHOOD_ARRAY
     
-    cpdef extend_closure(self, set initially_filled_subset, set vxs_to_add):
-        cdef list all_vertices
+    
+    
+    cpdef extend_closure(self, set initially_filled_subset, set vxs_to_add): 
         cdef set filled_set, vertices_to_check, vertices_to_recheck
         
-        all_vertices = list(self.vertices_set)
         filled_set = set(initially_filled_subset.union(vxs_to_add))
 
         vertices_to_check = set(vxs_to_add)
