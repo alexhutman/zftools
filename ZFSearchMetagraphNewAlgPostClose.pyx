@@ -14,42 +14,48 @@ cdef class ZFSearchMetagraphNewAlg:
     cdef public dict neighbors_dict
     
     #for-loop counters
-    cdef int i, j, v, vertex, new_vx_to_make_force
+    cdef int i, j, v, w, vertex, new_vx_to_make_force
     
     
     # Temp variable(s) for __init__ 
-    cdef bitset_t temp_vertex_neighbors
     
     # Initialize extend_closure variables
     cdef bitset_t filled_set, vertices_to_check, vertices_to_recheck, filled_neighbors, unfilled_neighbors, filled_neighbors_of_vx_to_fill
     
+    # Initialize calculate_cost variables 
+    cdef bitset_t meta_vertex
+    cdef int numUnfilledNeighbors, accounter, cost
+    
+    
     def __cinit__(self, graph_for_zero_forcing):
         self.num_vertices = graph_for_zero_forcing.num_verts()
         self.neighborhood_array = <bitset_t*> sig_malloc(self.num_vertices*sizeof(bitset_t)) #ALLOCATE NEIGHBORHOOD_ARRAY
-        bitset_init(self.temp_vertex_neighbors, self.num_vertices)
         
         
-        # Initialize extend_closure bitsets
+        # Initialize/clear extend_closure bitsets
         bitset_init(self.filled_set, self.num_vertices)
         bitset_init(self.vertices_to_check, self.num_vertices)
         bitset_init(self.vertices_to_recheck, self.num_vertices)
         bitset_init(self.filled_neighbors, self.num_vertices)
         bitset_init(self.unfilled_neighbors, self.num_vertices)
         bitset_init(self.filled_neighbors_of_vx_to_fill, self.num_vertices)
+        bitset_init(self.meta_vertex, self.num_vertices)
     
     def __init__(self, graph_for_zero_forcing):
         self.vertices_set = set(graph_for_zero_forcing.vertices())
-        self.neighbors_dict = {}
         
-        for i in self.vertices_set:
-            for j in graph_for_zero_forcing.neighbors(i):
-                bitset_add(self.temp_vertex_neighbors, j)
-                self.neighbors_dict[i] = frozenset(graph_for_zero_forcing.neighbors(i)) #Convert to bitset
-
+        
+        self.neighbors_dict = {} #TODO: Only so Dijkstra code doesn't break. Ideally want to remove this somehow
+        for i in graph_for_zero_forcing.vertices():
+            temp_vertex_neighbors = frozenset(graph_for_zero_forcing.neighbors(i))
+            self.neighbors_dict[i] = temp_vertex_neighbors
+            
         # create pointer to bitset array with neighborhoods
-        bitset_init(self.neighborhood_array[0], self.num_vertices)
-        if(bitset_isempty(self.neighborhood_array[0])):
-            print("Array successfully created/initialized (only 1st index for now)")
+        for v in range(self.num_vertices):
+            bitset_init(self.neighborhood_array[v], self.num_vertices)
+            bitset_clear(self.neighborhood_array[v])
+            for w in graph_for_zero_forcing.neighbors(v):
+                bitset_add(self.neighborhood_array[v], w)   
         
         #The variable below is just for profiling purposes!
         self.num_vertices_checked = 0
@@ -63,11 +69,12 @@ cdef class ZFSearchMetagraphNewAlg:
         bitset_free(self.filled_neighbors)
         bitset_free(self.unfilled_neighbors)
         bitset_free(self.filled_neighbors_of_vx_to_fill)
+        bitset_free(self.meta_vertex)
     
     
     #cpdef *bitset_t extend_closure(self, bitset_t initially_filled_subset, bitset_t vxs_to_add): #IF EVERYTHING WORKS
     #cpdef set extend_closure(self, bitset_t initially_filled_subset, bitset_t vxs_to_add): 
-    cpdef set extend_closure(self, set initially_filled_subset2, set vxs_to_add2): 
+    cpdef set extend_closure(self, set initially_filled_subset2, set vxs_to_add2): #TODO: See if it's possible to pass bitset_ts in instead of python sets
         
         cdef bitset_t initially_filled_subset
         cdef bitset_t vxs_to_add
@@ -93,10 +100,7 @@ cdef class ZFSearchMetagraphNewAlg:
 
         for v in range(self.num_vertices):
             if bitset_in(vxs_to_add, v):
-                bitset_clear(self.temp_vertex_neighbors)
-                for j in self.neighbors_dict[v]:
-                    bitset_add(self.temp_vertex_neighbors, j)
-                bitset_intersection(self.filled_neighbors, self.temp_vertex_neighbors, self.filled_set)
+                bitset_intersection(self.filled_neighbors, self.neighborhood_array[v], self.filled_set)
                 bitset_union(self.vertices_to_check, self.vertices_to_check, self.filled_neighbors)
             
         bitset_clear(self.vertices_to_recheck)
@@ -105,20 +109,14 @@ cdef class ZFSearchMetagraphNewAlg:
             bitset_clear(self.vertices_to_recheck)
             for vertex in range(self.num_vertices):
                 if bitset_in(self.vertices_to_check, vertex):
-                    bitset_clear(self.temp_vertex_neighbors)
-                    for j in self.neighbors_dict[vertex]:
-                        bitset_add(self.temp_vertex_neighbors, j)
-                    bitset_intersection(self.filled_neighbors, self.temp_vertex_neighbors, self.filled_set)
-                    bitset_difference(self.unfilled_neighbors, self.temp_vertex_neighbors, self.filled_neighbors)
+                    bitset_intersection(self.filled_neighbors, self.neighborhood_array[vertex], self.filled_set)
+                    bitset_difference(self.unfilled_neighbors, self.neighborhood_array[vertex], self.filled_neighbors)
                     
                     if bitset_len(self.unfilled_neighbors) == 1:
                         self.vertex_to_fill = bitset_next(self.unfilled_neighbors, 0)
                         bitset_add(self.vertices_to_recheck, self.vertex_to_fill)
                         
-                        bitset_clear(self.temp_vertex_neighbors)
-                        for j in self.neighbors_dict[self.vertex_to_fill]:
-                            bitset_add(self.temp_vertex_neighbors, j)
-                        bitset_intersection(self.filled_neighbors_of_vx_to_fill, self.temp_vertex_neighbors, self.filled_set)
+                        bitset_intersection(self.filled_neighbors_of_vx_to_fill, self.neighborhood_array[self.vertex_to_fill], self.filled_set)
                         bitset_remove(self.filled_neighbors_of_vx_to_fill, vertex)
                         bitset_union(self.vertices_to_recheck, self.vertices_to_recheck, self.filled_neighbors_of_vx_to_fill)
                         
@@ -129,23 +127,27 @@ cdef class ZFSearchMetagraphNewAlg:
         return set(bitset_list(self.filled_set))
     
 
-    cdef calculate_cost(self, frozenset meta_vertex, int vertex_to_calc_cost):
-        unfilled_neighbors = set(self.neighbors_dict[vertex_to_calc_cost])
-        unfilled_neighbors = unfilled_neighbors - meta_vertex
-        numUnfilledNeighbors = len(unfilled_neighbors)
-        accounter = None
+    cdef calculate_cost(self, frozenset meta_vertex2, int vertex_to_calc_cost):
+        bitset_clear(self.meta_vertex)
+        bitset_clear(self.unfilled_neighbors)
 
-        if numUnfilledNeighbors == 0:
-            accounter = 0
+        for i in meta_vertex2:
+            bitset_add(self.meta_vertex, i)
+        self.unfilled_neighbors = self.neighborhood_array[vertex_to_calc_cost]
+        bitset_difference(self.unfilled_neighbors, self.unfilled_neighbors, self.meta_vertex)
+        self.numUnfilledNeighbors = bitset_len(self.unfilled_neighbors)
+
+        if self.numUnfilledNeighbors == 0:
+            self.accounter = 0
         else:
-            accounter = 1
+            self.accounter = 1
 
-        cost = numUnfilledNeighbors - accounter
+        self.cost = self.numUnfilledNeighbors - self.accounter
 
-        if vertex_to_calc_cost not in meta_vertex:
-            cost = cost + 1
+        if not bitset_in(self.meta_vertex, vertex_to_calc_cost):
+            self.cost += 1
 
-        return cost
+        return self.cost
 
 
     cpdef neighbors_with_edges(self, frozenset meta_vertex):
