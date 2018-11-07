@@ -133,7 +133,7 @@ cdef class ZFSearchMetagraphNewAlg:
 
         for i in meta_vertex2:
             bitset_add(self.meta_vertex, i)
-        self.unfilled_neighbors = self.neighborhood_array[vertex_to_calc_cost]
+        bitset_copy(self.unfilled_neighbors, self.neighborhood_array[vertex_to_calc_cost])
         bitset_difference(self.unfilled_neighbors, self.unfilled_neighbors, self.meta_vertex)
         self.numUnfilledNeighbors = bitset_len(self.unfilled_neighbors)
 

@@ -29,7 +29,7 @@ def build_zf_set(final_metavx_list):
     return zf_set
 
 def dijkstra(metagraph, start, target):
-    real_dijkstra(metagraph, start, target)
+    return real_dijkstra(metagraph, start, target)
 
 cdef real_dijkstra(metagraph, start, target):
     global DijkstraMG
@@ -110,5 +110,5 @@ cdef real_dijkstra(metagraph, start, target):
 #    print "previous: ..."
 #    print previous
     shortest_path = shortest(target, temp, previous, start)
-    print shortest_path
+#    print shortest_path
     return build_zf_set(shortest_path)
