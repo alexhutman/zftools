@@ -135,6 +135,8 @@ def zero_forcing_set_wavefront(matrix):
     cdef FrozenBitset closure_to_add_unfilled_Bitset, unfilled_Bitset
 
     cdef int cost
+    
+    cdef int num_closures_REALLY_calculated = 0
 
     cdef int minimum_degree = min([len(matrix.nonzero_positions_in_row(i)) for i in range(num_vertices)])
 
@@ -211,6 +213,7 @@ def zero_forcing_set_wavefront(matrix):
                     bitset_difference(closure_to_add_unfilled, closure_to_add_unfilled, closure_to_add_initial)
                     #print "  before calling zfs algorithm, unfilled is: ", bitset_string(closure_to_add_unfilled)
                     update_wavefront(neighbors_set, closure_to_add_unfilled)
+                    num_closures_REALLY_calculated = num_closures_REALLY_calculated + 1
                     #print "  after running zfs: ", bitset_string(closure_to_add_unfilled)
 
                     # subtract one unfilled neighbor from the initial zero forcing set, 
@@ -234,7 +237,7 @@ def zero_forcing_set_wavefront(matrix):
                         sage_free(neighbors_set)
 
                         bitset_free(unfilled_neighbors)
-                        return len(zero_forcing_vertices), zero_forcing_vertices, len(closures)
+                        return len(zero_forcing_vertices), zero_forcing_vertices, num_closures_REALLY_calculated #len(closures)
 
                     if closure_to_add_unfilled_Bitset not in closures:
                         closures[closure_to_add_unfilled_Bitset] = closure_to_add_initial_Bitset

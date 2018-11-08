@@ -122,6 +122,8 @@ cdef class ZFSearchMetagraphNewAlg:
                         
                         bitset_add(self.filled_set, self.vertex_to_fill)
             bitset_copy(self.vertices_to_check, self.vertices_to_recheck)
+
+        self.num_vertices_checked = self.num_vertices_checked + 1            
             
         #return *self.filled_set #TODO: IF EVERYTHING WORKS RETURN POINTER
         return set(bitset_list(self.filled_set))
@@ -146,10 +148,13 @@ cdef class ZFSearchMetagraphNewAlg:
 
         if not bitset_in(self.meta_vertex, vertex_to_calc_cost):
             self.cost += 1
-
+    
         return self.cost
 
 
+    def get_num_closures_calculated(self):
+        return int(self.num_vertices_checked)
+    
     cpdef neighbors_with_edges(self, frozenset meta_vertex):
         # verify that 'meta_vertex' is actually a subset of the vertices
         # of self.primal_graph, to be interpreted as the filled subset
