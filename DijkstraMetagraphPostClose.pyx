@@ -107,8 +107,11 @@ cdef real_dijkstra(metagraph, start, target):
 #        print "queue before next pop", unvisited_queue
 
     temp = [(target, None)]
-#    print "previous: ..."
-#    print previous
     shortest_path = shortest(target, temp, previous, start)
-#    print shortest_path
+
+    print "Closures remaining on queue:                ", len(unvisited_queue)
+    print "Length of shortest path found in metagraph: ", len(shortest_path)
+#    print "Shortest path found: ", shortest_path
+
+    
     return build_zf_set(shortest_path)
