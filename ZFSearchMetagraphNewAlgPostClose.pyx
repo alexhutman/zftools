@@ -74,7 +74,7 @@ cdef class ZFSearchMetagraphNewAlg:
     
     #cpdef *bitset_t extend_closure(self, bitset_t initially_filled_subset, bitset_t vxs_to_add): #IF EVERYTHING WORKS
     #cpdef set extend_closure(self, bitset_t initially_filled_subset, bitset_t vxs_to_add): 
-    cpdef set extend_closure(self, set initially_filled_subset2, set vxs_to_add2): #TODO: See if it's possible to pass bitset_ts in instead of python sets
+    cpdef frozenset extend_closure(self, set initially_filled_subset2, set vxs_to_add2): #TODO: See if it's possible to pass bitset_ts in instead of python sets
         
         cdef bitset_t initially_filled_subset
         cdef bitset_t vxs_to_add
@@ -126,10 +126,14 @@ cdef class ZFSearchMetagraphNewAlg:
         self.num_vertices_checked = self.num_vertices_checked + 1            
             
         #return *self.filled_set #TODO: IF EVERYTHING WORKS RETURN POINTER
-        return set(bitset_list(self.filled_set))
+        return frozenset(bitset_list(self.filled_set))
     
 
-    cdef calculate_cost(self, frozenset meta_vertex2, int vertex_to_calc_cost):
+    cdef int calculate_cost(self, frozenset meta_vertex2, int vertex_to_calc_cost):
+        cdef int cost
+        cdef int i
+        cdef int num_unfilled_neighbors
+        
         bitset_clear(self.meta_vertex)
         bitset_clear(self.unfilled_neighbors)
 
@@ -137,31 +141,30 @@ cdef class ZFSearchMetagraphNewAlg:
             bitset_add(self.meta_vertex, i)
         bitset_copy(self.unfilled_neighbors, self.neighborhood_array[vertex_to_calc_cost])
         bitset_difference(self.unfilled_neighbors, self.unfilled_neighbors, self.meta_vertex)
-        self.numUnfilledNeighbors = bitset_len(self.unfilled_neighbors)
+        num_unfilled_neighbors = bitset_len(self.unfilled_neighbors)
 
-        if self.numUnfilledNeighbors == 0:
-            self.accounter = 0
+        if num_unfilled_neighbors == 0:
+            cost = num_unfilled_neighbors
         else:
-            self.accounter = 1
-
-        self.cost = self.numUnfilledNeighbors - self.accounter
+            cost = num_unfilled_neighbors - 1
 
         if not bitset_in(self.meta_vertex, vertex_to_calc_cost):
-            self.cost += 1
+            cost += 1
     
-        return self.cost
+        return cost
 
 
     def get_num_closures_calculated(self):
         return int(self.num_vertices_checked)
     
-    cpdef neighbors_with_edges(self, frozenset meta_vertex):
+    cpdef set neighbors_with_edges(self, frozenset meta_vertex):
         # verify that 'meta_vertex' is actually a subset of the vertices
         # of self.primal_graph, to be interpreted as the filled subset
         #print "neighbors requested for ", list(meta_vertex)
 
         cdef set set_of_neighbors_with_edges = set()
         cdef int new_vx_to_make_force
+        cdef int cost
 
         for new_vx_to_make_force in self.vertices_set:
             cost = self.calculate_cost(meta_vertex, new_vx_to_make_force)

@@ -38,6 +38,16 @@ cdef real_dijkstra(metagraph, start, target):
     cdef set previous_closure
     cdef set vx_and_neighbors
     
+    cdef frozenset current
+    cdef dict previous
+    cdef list unvisited_queue
+    
+    cdef int current_distance
+    cdef int cost_of_making_it_force
+    cdef int what_forced
+    cdef int new_dist
+    
+    
     previous = {}
     unvisited_queue = [(0, start, None)]
     heapq.heapify(unvisited_queue)
@@ -45,29 +55,18 @@ cdef real_dijkstra(metagraph, start, target):
     done = False
     while not done:
         uv = heapq.heappop(unvisited_queue)
-#        print "just popped", uv
         
         current_distance = uv[0]
         parent = uv[1]
         vx_that_is_to_force = uv[2]
-
-#        vx_and_neighbors = set(parent) if parent != None else set([])
-#        if vx_that_is_to_force != None:
-#            vx_and_neighbors = vx_and_neighbors.union(set(metagraph.neighbors_dict[vx_that_is_to_force])).union(set([vx_that_is_to_force]))
-#        current = frozenset(metagraph.close_subset_under_forcing(vx_and_neighbors))
 
         previous_closure = set(parent)
         vx_and_neighbors = set([])
         if vx_that_is_to_force != None:
             vx_and_neighbors = set([vx_that_is_to_force])
             vx_and_neighbors.update(set(metagraph.neighbors_dict[vx_that_is_to_force]))
-        current = frozenset(metagraph.extend_closure(previous_closure, vx_and_neighbors))
+        current = metagraph.extend_closure(previous_closure, vx_and_neighbors)
 
-
-#        print "closure calculated as", current
-        
-#        print "result of forcing on",vx_and_neighbors ,"after forcing", current
-        
         # whether vertex is in 'previous' is proxy for if it has been visited
         if current in previous:
             continue
@@ -83,29 +82,20 @@ cdef real_dijkstra(metagraph, start, target):
             
             
         previous[current] = (parent, vx_that_is_to_force)
-#        print "stored", parent, "as predecessor of", current
 
         if current == target: # We have found the target vertex, can stop searching now
             done = True
-#            break
+            break
             
-#        print "visiting", current, "from predecessor", previous[current]
-
         for neighbor_tuple in metagraph.neighbors_with_edges(current):
-#            print "neighbor of", current, ":", neighbor_tuple, "with cost", neighbor_tuple[0]
             what_forced = neighbor_tuple[1]
             cost_of_making_it_force = neighbor_tuple[0]
             
-#            if next_vx in previous:
-#                continue
             new_dist = current_distance + cost_of_making_it_force
             
             heapq.heappush(unvisited_queue, (new_dist, current, what_forced))
-            
-            #print "Pushing: ", (next_vx, new_dist, current, what_forced)
-        
-#        print "queue before next pop", unvisited_queue
 
+            
     temp = [(target, None)]
     shortest_path = shortest(target, temp, previous, start)
 
