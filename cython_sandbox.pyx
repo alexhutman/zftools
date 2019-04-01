@@ -231,7 +231,7 @@ cdef list extend_closure_ordinary_ZF(int n, bitset_s* neighborhood_array, bitset
 	
 	new_closure_Bitset = FrozenBitset(capacity=n)
 	# the code below is a 'hack' appearing in the wavefront code
-	# to get data from a Cython bitset to a Sage (Python) object
+	# to get data from a Sage (Python) object to a Cython bitset
 	bitset_copy(&new_closure_Bitset._bitset[0], filled_vertices)
 	
 	bitset_free(filled_vertices)

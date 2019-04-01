@@ -74,7 +74,7 @@ cdef class ZFSearchMetagraphNewAlg:
     
     #cpdef *bitset_t extend_closure(self, bitset_t initially_filled_subset, bitset_t vxs_to_add): #IF EVERYTHING WORKS
     #cpdef set extend_closure(self, bitset_t initially_filled_subset, bitset_t vxs_to_add): 
-    cpdef frozenset extend_closure(self, set initially_filled_subset2, set vxs_to_add2): #TODO: See if it's possible to pass bitset_ts in instead of python sets
+    cpdef frozenset extend_closure(self, Bitset initially_filled_subset2, Bitset vxs_to_add2): #TODO: See if it's possible to pass bitset_ts in instead of python sets
         
         cdef bitset_t initially_filled_subset
         cdef bitset_t vxs_to_add
@@ -82,10 +82,18 @@ cdef class ZFSearchMetagraphNewAlg:
         bitset_init(initially_filled_subset, self.num_vertices)
         bitset_init(vxs_to_add, self.num_vertices)
         
-        for i in initially_filled_subset2:
-            bitset_add(initially_filled_subset, i)
-        for i in vxs_to_add2:
-            bitset_add(vxs_to_add, i)
+        ##################################### THIS WORKS #####################################
+        for i in initially_filled_subset2:                                                   #
+            bitset_add(initially_filled_subset, i)                                           #
+        bitset_copy(&initially_filled_subset2._bitset[0], initially_filled_subset)           #
+        for i in vxs_to_add2:                                                                #
+            bitset_add(vxs_to_add, i)                                                        #
+        ######################################################################################
+
+        ################################### THIS DOESN'T?! ###################################
+        #bitset_copy(&initially_filled_subset2._bitset[0], initially_filled_subset)          #
+        #bitset_copy(&vxs_to_add2._bitset[0], vxs_to_add)                                    #
+        ######################################################################################
         
         bitset_clear(self.filled_set)
         bitset_clear(self.vertices_to_check)

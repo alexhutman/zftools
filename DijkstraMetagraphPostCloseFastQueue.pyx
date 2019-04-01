@@ -1,5 +1,6 @@
 import itertools
 import random
+from sage.data_structures.bitset import Bitset
 
 
 class FastQueueForBFS:
@@ -90,8 +91,8 @@ cdef real_dijkstra(metagraph, start, target):
     global DijkstraMG
     DijkstraMG = metagraph
 
-    cdef set previous_closure
-    cdef set vx_and_neighbors
+    #cdef Bitset previous_closure
+    #cdef Bitset vx_and_neighbors
     
     cdef frozenset current
     cdef dict previous
@@ -118,11 +119,14 @@ cdef real_dijkstra(metagraph, start, target):
         parent = uv[0]
         vx_that_is_to_force = uv[1]
 
-        previous_closure = set(parent)
-        vx_and_neighbors = set([])
+        previous_closure = Bitset()
+        test_capacity = max(parent)+1 if len(parent) > 0 else 1
+        previous_closure.update(Bitset(parent, capacity=test_capacity))
+
+        vx_and_neighbors = Bitset()
         if vx_that_is_to_force != None:
-            vx_and_neighbors = set([vx_that_is_to_force])
-            vx_and_neighbors.update(set(metagraph.neighbors_dict[vx_that_is_to_force]))
+            vx_and_neighbors.add(vx_that_is_to_force)
+            vx_and_neighbors.update(Bitset(metagraph.neighbors_dict[vx_that_is_to_force]))
         current = metagraph.extend_closure(previous_closure, vx_and_neighbors)
 
         # whether vertex is in 'previous' is proxy for if it has been visited
