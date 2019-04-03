@@ -81,19 +81,10 @@ cdef class ZFSearchMetagraphNewAlg:
         
         bitset_init(initially_filled_subset, self.num_vertices)
         bitset_init(vxs_to_add, self.num_vertices)
-        
-        ##################################### THIS WORKS #####################################
-        for i in initially_filled_subset2:                                                   #
-            bitset_add(initially_filled_subset, i)                                           #
-        bitset_copy(&initially_filled_subset2._bitset[0], initially_filled_subset)           #
-        for i in vxs_to_add2:                                                                #
-            bitset_add(vxs_to_add, i)                                                        #
-        ######################################################################################
 
-        ################################### THIS DOESN'T?! ###################################
-        #bitset_copy(&initially_filled_subset2._bitset[0], initially_filled_subset)          #
-        #bitset_copy(&vxs_to_add2._bitset[0], vxs_to_add)                                    #
-        ######################################################################################
+        ##################################### THIS SEEMS TO WORK! #####################################
+        bitset_copy(initially_filled_subset, &initially_filled_subset2._bitset[0])
+        bitset_copy(vxs_to_add, &vxs_to_add2._bitset[0])
         
         bitset_clear(self.filled_set)
         bitset_clear(self.vertices_to_check)
