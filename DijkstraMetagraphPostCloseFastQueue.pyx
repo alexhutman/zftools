@@ -1,6 +1,6 @@
 import itertools
 import random
-from sage.data_structures.bitset import Bitset
+from sage.data_structures.bitset import Bitset, FrozenBitset
 
 
 class FastQueueForBFS:
@@ -94,7 +94,8 @@ cdef real_dijkstra(metagraph, start, target):
     #cdef Bitset previous_closure
     #cdef Bitset vx_and_neighbors
     
-    cdef frozenset current
+#    cdef frozenset current
+
     cdef dict previous
 #    cdef list unvisited_queue
     
@@ -103,11 +104,20 @@ cdef real_dijkstra(metagraph, start, target):
     cdef int what_forced
     cdef int new_dist
     
+    cdef int num_vertices_primal_graph
+
+    num_vertices_primal_graph = metagraph.num_vertices
+    
+#    current = FrozenBitset()
     
     previous = {}
 #    unvisited_queue = [(0, start, None)]
-    unvisited_queue = FastQueueForBFS(100) # NEED TO CHANGE THIS TO NUMBER OF VERTICES IN PRIMAL GRAPH
-    unvisited_queue.push( 0, (start, None) )
+    unvisited_queue = FastQueueForBFS(num_vertices_primal_graph)
+    
+    start_FrozenBitset = FrozenBitset(start, capacity=num_vertices_primal_graph)
+    target_FrozenBitset = FrozenBitset(target, capacity=num_vertices_primal_graph)
+    
+    unvisited_queue.push( 0, (start_FrozenBitset, None) )
 #    heapq.heapify(unvisited_queue)
 
     done = False
@@ -119,15 +129,17 @@ cdef real_dijkstra(metagraph, start, target):
         parent = uv[0]
         vx_that_is_to_force = uv[1]
 
-        previous_closure = Bitset()
-        test_capacity = max(parent)+1 if len(parent) > 0 else 1
-        previous_closure.update(Bitset(parent, capacity=test_capacity))
+        previous_closure = parent
+#        test_capacity = max(parent)+1 if len(parent) > 0 else 1
+#        previous_closure.update(Bitset(parent, capacity=test_capacity))
 
         vx_and_neighbors = Bitset()
         if vx_that_is_to_force != None:
             vx_and_neighbors.add(vx_that_is_to_force)
-            vx_and_neighbors.update(Bitset(metagraph.neighbors_dict[vx_that_is_to_force]))
+            vx_and_neighbors.update(metagraph.neighbors_dict[vx_that_is_to_force])
         current = metagraph.extend_closure(previous_closure, vx_and_neighbors)
+        
+        
 
         # whether vertex is in 'previous' is proxy for if it has been visited
         if current in previous:
@@ -145,7 +157,7 @@ cdef real_dijkstra(metagraph, start, target):
             
         previous[current] = (parent, vx_that_is_to_force)
 
-        if current == target: # We have found the target vertex, can stop searching now
+        if current == target_FrozenBitset: # We have found the target vertex, can stop searching now
             done = True
             break
             
@@ -159,8 +171,8 @@ cdef real_dijkstra(metagraph, start, target):
             unvisited_queue.push( new_dist, (current, what_forced) )
 
             
-    temp = [(target, None)]
-    shortest_path = shortest(target, temp, previous, start)
+    temp = [(target_FrozenBitset, None)]
+    shortest_path = shortest(target_FrozenBitset, temp, previous, start_FrozenBitset)
 
     print "Closures remaining on queue:                ", len(unvisited_queue)
     print "Length of shortest path found in metagraph: ", len(shortest_path)

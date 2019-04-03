@@ -7,7 +7,7 @@ include "cysignals/memory.pxi"
 
 # Define metagraph class in Python
 cdef class ZFSearchMetagraphNewAlg:
-    cdef int num_vertices, 
+    cdef public int num_vertices, 
     cdef int num_vertices_checked, vertex_to_fill
     cdef bitset_t *neighborhood_array 
     cdef set vertices_set
@@ -47,7 +47,7 @@ cdef class ZFSearchMetagraphNewAlg:
         
         self.neighbors_dict = {} #TODO: Only so Dijkstra code doesn't break. Ideally want to remove this somehow
         for i in graph_for_zero_forcing.vertices():
-            temp_vertex_neighbors = frozenset(graph_for_zero_forcing.neighbors(i))
+            temp_vertex_neighbors = FrozenBitset(graph_for_zero_forcing.neighbors(i))
             self.neighbors_dict[i] = temp_vertex_neighbors
             
         # create pointer to bitset array with neighborhoods
@@ -74,7 +74,7 @@ cdef class ZFSearchMetagraphNewAlg:
     
     #cpdef *bitset_t extend_closure(self, bitset_t initially_filled_subset, bitset_t vxs_to_add): #IF EVERYTHING WORKS
     #cpdef set extend_closure(self, bitset_t initially_filled_subset, bitset_t vxs_to_add): 
-    cpdef frozenset extend_closure(self, Bitset initially_filled_subset2, Bitset vxs_to_add2): #TODO: See if it's possible to pass bitset_ts in instead of python sets
+    cpdef FrozenBitset extend_closure(self, FrozenBitset initially_filled_subset2, FrozenBitset vxs_to_add2): #TODO: See if it's possible to pass bitset_ts in instead of python sets
         
         cdef bitset_t initially_filled_subset
         cdef bitset_t vxs_to_add
@@ -125,10 +125,10 @@ cdef class ZFSearchMetagraphNewAlg:
         self.num_vertices_checked = self.num_vertices_checked + 1            
             
         #return *self.filled_set #TODO: IF EVERYTHING WORKS RETURN POINTER
-        return frozenset(bitset_list(self.filled_set))
+        return FrozenBitset(bitset_list(self.filled_set), capacity=self.num_vertices)
     
 
-    cpdef set neighbors_with_edges(self, frozenset meta_vertex):
+    cpdef set neighbors_with_edges(self, FrozenBitset meta_vertex):
         # verify that 'meta_vertex' is actually a subset of the vertices
         # of self.primal_graph, to be interpreted as the filled subset
         #print "neighbors requested for ", list(meta_vertex)
@@ -139,9 +139,7 @@ cdef class ZFSearchMetagraphNewAlg:
         cdef int i
         cdef int num_unfilled_neighbors
 
-        bitset_clear(self.meta_vertex)
-        for i in meta_vertex:
-            bitset_add(self.meta_vertex, i)
+        bitset_copy(self.meta_vertex, &meta_vertex._bitset[0])
         
         for new_vx_to_make_force in self.vertices_set:
             bitset_copy(self.unfilled_neighbors, self.neighborhood_array[new_vx_to_make_force])
@@ -164,5 +162,8 @@ cdef class ZFSearchMetagraphNewAlg:
     
     def get_num_closures_calculated(self):
         return int(self.num_vertices_checked)
+    
+    def get_primal_graph_num_verts(self):
+        return 1111
     
 
