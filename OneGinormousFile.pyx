@@ -126,7 +126,7 @@ cdef class ZFSearchMetagraphNewAlg:
         return FrozenBitset(bitset_list(self.filled_set), capacity=self.num_vertices)
     
 
-    cdef set neighbors_with_edges(self, FrozenBitset meta_vertex):
+    cdef neighbors_with_edges_add_to_queue(self, FrozenBitset meta_vertex, FastQueueForBFS the_queue, int previous_cost):
         # verify that 'meta_vertex' is actually a subset of the vertices
         # of self.primal_graph, to be interpreted as the filled subset
         #print "neighbors requested for ", list(meta_vertex)
@@ -153,9 +153,7 @@ cdef class ZFSearchMetagraphNewAlg:
                 cost += 1
 
             if cost > 0:
-                tuple_of_neighbor_with_edge = (cost, new_vx_to_make_force)
-                set_of_neighbors_with_edges.add(tuple_of_neighbor_with_edge)
-        return set_of_neighbors_with_edges
+                the_queue.push(  previous_cost + cost,  (meta_vertex, new_vx_to_make_force) )
 
     
     def get_num_closures_calculated(self):
@@ -332,15 +330,17 @@ cdef real_dijkstra(ZFSearchMetagraphNewAlg metagraph, start, target):
         if current == target_FrozenBitset: # We have found the target vertex, can stop searching now
             done = True
             break
+        
+        metagraph.neighbors_with_edges_add_to_queue(current, unvisited_queue, current_distance)
+
+#        for neighbor_tuple in metagraph.neighbors_with_edges(current):
+#            what_forced = neighbor_tuple[1]
+#            cost_of_making_it_force = neighbor_tuple[0]
             
-        for neighbor_tuple in metagraph.neighbors_with_edges(current):
-            what_forced = neighbor_tuple[1]
-            cost_of_making_it_force = neighbor_tuple[0]
-            
-            new_dist = current_distance + cost_of_making_it_force
+#            new_dist = current_distance + cost_of_making_it_force
             
 #            heapq.heappush(unvisited_queue, (new_dist, current, what_forced))
-            unvisited_queue.push( new_dist, (current, what_forced) )
+#            unvisited_queue.push( new_dist, (current, what_forced) )
 
             
     temp = [(target_FrozenBitset, None)]
