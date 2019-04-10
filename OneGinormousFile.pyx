@@ -1,3 +1,5 @@
+# cython: profile=False
+
 #from sage.all import *
 from sage.graphs.all import Graph
 
@@ -85,13 +87,6 @@ cdef class ZFSearchMetagraphNewAlg:
         cdef bitset_t initially_filled_subset
         cdef bitset_t vxs_to_add
         
-        bitset_init(initially_filled_subset, self.num_vertices)
-        bitset_init(vxs_to_add, self.num_vertices)
-
-        ##################################### THIS SEEMS TO WORK! #####################################
-        bitset_copy(initially_filled_subset, &initially_filled_subset2._bitset[0])
-        bitset_copy(vxs_to_add, &vxs_to_add2._bitset[0])
-        
         bitset_clear(self.filled_set)
         bitset_clear(self.vertices_to_check)
         bitset_clear(self.vertices_to_recheck)
@@ -99,12 +94,12 @@ cdef class ZFSearchMetagraphNewAlg:
         bitset_clear(self.unfilled_neighbors)
         bitset_clear(self.filled_neighbors_of_vx_to_fill)
         
-        bitset_union(self.filled_set, initially_filled_subset, vxs_to_add)
+        bitset_union(self.filled_set, &initially_filled_subset2._bitset[0], &vxs_to_add2._bitset[0])
 
-        bitset_copy(self.vertices_to_check, vxs_to_add)
+        bitset_copy(self.vertices_to_check, &vxs_to_add2._bitset[0])
 
         for v in range(self.num_vertices):
-            if bitset_in(vxs_to_add, v):
+            if bitset_in(&vxs_to_add2._bitset[0], v):
                 bitset_intersection(self.filled_neighbors, self.neighborhood_array[v], self.filled_set)
                 bitset_union(self.vertices_to_check, self.vertices_to_check, self.filled_neighbors)
             
@@ -129,8 +124,11 @@ cdef class ZFSearchMetagraphNewAlg:
             bitset_copy(self.vertices_to_check, self.vertices_to_recheck)
 
         self.num_vertices_checked = self.num_vertices_checked + 1            
-            
-        return FrozenBitset(bitset_list(self.filled_set), capacity=self.num_vertices)
+        
+        set_to_return = FrozenBitset(capacity=self.num_vertices)
+        bitset_copy(&set_to_return._bitset[0], self.filled_set)
+#        return FrozenBitset(bitset_list(self.filled_set), capacity=self.num_vertices)
+        return set_to_return
     
 
     cdef neighbors_with_edges_add_to_queue(self, FrozenBitset meta_vertex, FastQueueForBFS the_queue, int previous_cost):
