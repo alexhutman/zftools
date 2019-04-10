@@ -72,9 +72,7 @@ cdef class ZFSearchMetagraphNewAlg:
         bitset_free(self.meta_vertex)
     
     
-    #cpdef *bitset_t extend_closure(self, bitset_t initially_filled_subset, bitset_t vxs_to_add): #IF EVERYTHING WORKS
-    #cpdef set extend_closure(self, bitset_t initially_filled_subset, bitset_t vxs_to_add): 
-    cpdef FrozenBitset extend_closure(self, FrozenBitset initially_filled_subset2, FrozenBitset vxs_to_add2): #TODO: See if it's possible to pass bitset_ts in instead of python sets
+    cdef FrozenBitset extend_closure(self, FrozenBitset initially_filled_subset2, FrozenBitset vxs_to_add2):
         
         cdef bitset_t initially_filled_subset
         cdef bitset_t vxs_to_add
@@ -128,7 +126,7 @@ cdef class ZFSearchMetagraphNewAlg:
         return FrozenBitset(bitset_list(self.filled_set), capacity=self.num_vertices)
     
 
-    cpdef set neighbors_with_edges(self, FrozenBitset meta_vertex):
+    cdef set neighbors_with_edges(self, FrozenBitset meta_vertex):
         # verify that 'meta_vertex' is actually a subset of the vertices
         # of self.primal_graph, to be interpreted as the filled subset
         #print "neighbors requested for ", list(meta_vertex)
@@ -163,9 +161,6 @@ cdef class ZFSearchMetagraphNewAlg:
     def get_num_closures_calculated(self):
         return int(self.num_vertices_checked)
     
-    def get_primal_graph_num_verts(self):
-        return 1111
-    
 
 
 
@@ -177,7 +172,10 @@ import random
 from sage.data_structures.bitset import Bitset, FrozenBitset
 
 
-class FastQueueForBFS:
+cdef class FastQueueForBFS:
+    cdef list array_list
+    cdef int smallest_nonempty_priority
+    cdef int max_possible_priority
     
     def __init__(self, max_priority):
         self.array_list = []
@@ -195,7 +193,7 @@ class FastQueueForBFS:
             total_length += len(self.array_list[i])
         return total_length
     
-    def pop(self):
+    cdef pop(self):
         if self.smallest_nonempty_priority > self.max_possible_priority:
             return None
         else:
@@ -208,7 +206,7 @@ class FastQueueForBFS:
                 break
         return item_to_return
     
-    def pop_and_get_priority(self):
+    cdef tuple pop_and_get_priority(self):
         if self.smallest_nonempty_priority > self.max_possible_priority:
             return None
         else:
@@ -222,7 +220,7 @@ class FastQueueForBFS:
                 break
         return priority_to_return, item_to_return
 
-    def push(self, priority_for_new_item, new_item):
+    cdef push(self, int priority_for_new_item, tuple new_item):
         self.array_list[priority_for_new_item].append(new_item)
         
         if priority_for_new_item < self.smallest_nonempty_priority:
@@ -261,7 +259,7 @@ def build_zf_set(final_metavx_list):
 def dijkstra(metagraph, start, target):
     return real_dijkstra(metagraph, start, target)
 
-cdef real_dijkstra(metagraph, start, target):
+cdef real_dijkstra(ZFSearchMetagraphNewAlg metagraph, start, target):
     global DijkstraMG
     DijkstraMG = metagraph
 
