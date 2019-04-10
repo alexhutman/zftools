@@ -12,6 +12,7 @@ cdef class ZFSearchMetagraphNewAlg:
     cdef bitset_t *neighborhood_array 
     cdef set vertices_set
     cdef public dict neighbors_dict
+    cdef public dict closed_neighborhood_list
     
     #for-loop counters
     cdef int i, j, v, w, vertex, new_vx_to_make_force
@@ -49,6 +50,13 @@ cdef class ZFSearchMetagraphNewAlg:
         for i in graph_for_zero_forcing.vertices():
             temp_vertex_neighbors = FrozenBitset(graph_for_zero_forcing.neighbors(i))
             self.neighbors_dict[i] = temp_vertex_neighbors
+        
+        self.closed_neighborhood_list = {}
+        for i in graph_for_zero_forcing.vertices():
+            temp_vertex_neighbors = FrozenBitset(graph_for_zero_forcing.neighbors(i) + [i])
+            self.closed_neighborhood_list[i] = temp_vertex_neighbors
+            
+        
             
         # create pointer to bitset array with neighborhoods
         for v in range(self.num_vertices):
@@ -122,7 +130,6 @@ cdef class ZFSearchMetagraphNewAlg:
 
         self.num_vertices_checked = self.num_vertices_checked + 1            
             
-        #return *self.filled_set #TODO: IF EVERYTHING WORKS RETURN POINTER
         return FrozenBitset(bitset_list(self.filled_set), capacity=self.num_vertices)
     
 
@@ -131,7 +138,6 @@ cdef class ZFSearchMetagraphNewAlg:
         # of self.primal_graph, to be interpreted as the filled subset
         #print "neighbors requested for ", list(meta_vertex)
 
-        cdef set set_of_neighbors_with_edges = set()
         cdef int new_vx_to_make_force
         cdef int cost
         cdef int i
@@ -153,7 +159,7 @@ cdef class ZFSearchMetagraphNewAlg:
                 cost += 1
 
             if cost > 0:
-                the_queue.push(  previous_cost + cost,  (meta_vertex, new_vx_to_make_force) )
+                the_queue.push( previous_cost + cost,  (meta_vertex, new_vx_to_make_force) )
 
     
     def get_num_closures_calculated(self):
@@ -278,7 +284,7 @@ cdef real_dijkstra(ZFSearchMetagraphNewAlg metagraph, start, target):
 
     num_vertices_primal_graph = metagraph.num_vertices
     
-#    current = FrozenBitset()
+    empty_FrozenBitset = FrozenBitset()
     
     previous = {}
 #    unvisited_queue = [(0, start, None)]
@@ -303,15 +309,11 @@ cdef real_dijkstra(ZFSearchMetagraphNewAlg metagraph, start, target):
 #        test_capacity = max(parent)+1 if len(parent) > 0 else 1
 #        previous_closure.update(Bitset(parent, capacity=test_capacity))
 
-        vx_and_neighbors = Bitset()
         if vx_that_is_to_force != None:
-            vx_and_neighbors.add(vx_that_is_to_force)
-            vx_and_neighbors.update(metagraph.neighbors_dict[vx_that_is_to_force])
-        current = metagraph.extend_closure(previous_closure, vx_and_neighbors)
+            current = metagraph.extend_closure(previous_closure, metagraph.closed_neighborhood_list[vx_that_is_to_force])
+        else:
+            current = empty_FrozenBitset
         
-        
-
-        # whether vertex is in 'previous' is proxy for if it has been visited
         if current in previous:
             continue
 
@@ -332,16 +334,6 @@ cdef real_dijkstra(ZFSearchMetagraphNewAlg metagraph, start, target):
             break
         
         metagraph.neighbors_with_edges_add_to_queue(current, unvisited_queue, current_distance)
-
-#        for neighbor_tuple in metagraph.neighbors_with_edges(current):
-#            what_forced = neighbor_tuple[1]
-#            cost_of_making_it_force = neighbor_tuple[0]
-            
-#            new_dist = current_distance + cost_of_making_it_force
-            
-#            heapq.heappush(unvisited_queue, (new_dist, current, what_forced))
-#            unvisited_queue.push( new_dist, (current, what_forced) )
-
             
     temp = [(target_FrozenBitset, None)]
     shortest_path = shortest(target_FrozenBitset, temp, previous, start_FrozenBitset)
