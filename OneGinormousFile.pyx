@@ -9,25 +9,22 @@ include "cysignals/memory.pxi"
 
 # Define metagraph class in Python
 cdef class ZFSearchMetagraphNewAlg:
-    cdef public int num_vertices, 
-    cdef int num_vertices_checked, vertex_to_fill
-    cdef bitset_t *neighborhood_array 
-    cdef set vertices_set
-    cdef public dict neighbors_dict
-    cdef public dict closed_neighborhood_list
+    cdef:
+        public int num_vertices 
+        int num_vertices_checked, vertex_to_fill
+        bitset_t *neighborhood_array 
+        set vertices_set
+        public dict neighbors_dict, closed_neighborhood_list
     
-    #for-loop counters
-    cdef int i, j, v, w, vertex, new_vx_to_make_force
+        #for-loop counters
+        int i, j, v, w, vertex, new_vx_to_make_force
     
+        # Initialize extend_closure variables
+        bitset_t filled_set, vertices_to_check, vertices_to_recheck, filled_neighbors, unfilled_neighbors, filled_neighbors_of_vx_to_fill
     
-    # Temp variable(s) for __init__ 
-    
-    # Initialize extend_closure variables
-    cdef bitset_t filled_set, vertices_to_check, vertices_to_recheck, filled_neighbors, unfilled_neighbors, filled_neighbors_of_vx_to_fill
-    
-    # Initialize calculate_cost variables 
-    cdef bitset_t meta_vertex
-    cdef int numUnfilledNeighbors, accounter, cost
+        # Initialize calculate_cost variables 
+        bitset_t meta_vertex
+        int numUnfilledNeighbors, accounter, cost
     
     
     def __cinit__(self, graph_for_zero_forcing):
