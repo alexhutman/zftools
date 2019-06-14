@@ -1,17 +1,16 @@
 # cython: profile=False
 
-#from sage.all import *
 from sage.graphs.all import Graph
+from sage.data_structures.bitset import Bitset, FrozenBitset
 
 include "sage/data_structures/bitset.pxi"
-
 include "cysignals/memory.pxi"
 
 # Define metagraph class in Python
-cdef class ZFSearchMetagraphNewAlg:
+cdef class ZFSearchMetagraph:
     cdef:
         public int num_vertices 
-        int num_vertices_checked, vertex_to_fill
+        int num_closures_calculated, vertex_to_fill
         bitset_t *neighborhood_array 
         set vertices_set
         public dict neighbors_dict, closed_neighborhood_list
@@ -29,8 +28,7 @@ cdef class ZFSearchMetagraphNewAlg:
     
     def __cinit__(self, graph_for_zero_forcing):
         self.num_vertices = graph_for_zero_forcing.num_verts()
-        self.neighborhood_array = <bitset_t*> sig_malloc(self.num_vertices*sizeof(bitset_t)) #ALLOCATE NEIGHBORHOOD_ARRAY
-        
+        self.neighborhood_array = <bitset_t*> sig_malloc(self.num_vertices*sizeof(bitset_t))
         
         # Initialize/clear extend_closure bitsets
         bitset_init(self.filled_set, self.num_vertices)
@@ -44,18 +42,10 @@ cdef class ZFSearchMetagraphNewAlg:
     def __init__(self, graph_for_zero_forcing):
         self.vertices_set = set(graph_for_zero_forcing.vertices())
         
-        
-        self.neighbors_dict = {} #TODO: Only so Dijkstra code doesn't break. Ideally want to remove this somehow
-        for i in graph_for_zero_forcing.vertices():
-            temp_vertex_neighbors = FrozenBitset(graph_for_zero_forcing.neighbors(i))
-            self.neighbors_dict[i] = temp_vertex_neighbors
-        
         self.closed_neighborhood_list = {}
         for i in graph_for_zero_forcing.vertices():
             temp_vertex_neighbors = FrozenBitset(graph_for_zero_forcing.neighbors(i) + [i])
             self.closed_neighborhood_list[i] = temp_vertex_neighbors
-            
-        
             
         # create pointer to bitset array with neighborhoods
         for v in range(self.num_vertices):
@@ -65,10 +55,10 @@ cdef class ZFSearchMetagraphNewAlg:
                 bitset_add(self.neighborhood_array[v], w)   
         
         #The variable below is just for profiling purposes!
-        self.num_vertices_checked = 0
+        self.num_closures_calculated = 0
         
     def __dealloc__(self):
-        sig_free(self.neighborhood_array) #DEALLOCATE NEIGHBORHOOD_ARRAY
+        sig_free(self.neighborhood_array)
         
         bitset_free(self.filled_set)
         bitset_free(self.vertices_to_check)
@@ -79,11 +69,10 @@ cdef class ZFSearchMetagraphNewAlg:
         bitset_free(self.meta_vertex)
     
     
-    cdef FrozenBitset extend_closure(self, FrozenBitset initially_filled_subset2, FrozenBitset vxs_to_add2):
+    cdef FrozenBitset extend_closure(self, FrozenBitset initially_filled_subset, FrozenBitset vxs_to_add):
         
-        cdef bitset_t initially_filled_subset
-        cdef bitset_t vxs_to_add
-        
+        # we used member variables so that we didn't have to keep allocating
+        # these stupid bitset_s on every call to extend_closure
         bitset_clear(self.filled_set)
         bitset_clear(self.vertices_to_check)
         bitset_clear(self.vertices_to_recheck)
@@ -91,18 +80,20 @@ cdef class ZFSearchMetagraphNewAlg:
         bitset_clear(self.unfilled_neighbors)
         bitset_clear(self.filled_neighbors_of_vx_to_fill)
         
-        bitset_union(self.filled_set, &initially_filled_subset2._bitset[0], &vxs_to_add2._bitset[0])
+        # Rather than copy the contents of the FrozenBitset initially_filled_subset
+        # into a bitset_t, we use a "hack" to access the internal data of the FrozenBitset
+        # which is itself stored as a bitset_t (since FrozenBitset is a wrapper for one of those)
+        bitset_union(self.filled_set, &initially_filled_subset._bitset[0], &vxs_to_add._bitset[0])
 
-        bitset_copy(self.vertices_to_check, &vxs_to_add2._bitset[0])
+        bitset_copy(self.vertices_to_check, &vxs_to_add._bitset[0])
 
         for v in range(self.num_vertices):
-            if bitset_in(&vxs_to_add2._bitset[0], v):
+            if bitset_in(&vxs_to_add._bitset[0], v):
                 bitset_intersection(self.filled_neighbors, self.neighborhood_array[v], self.filled_set)
                 bitset_union(self.vertices_to_check, self.vertices_to_check, self.filled_neighbors)
             
         bitset_clear(self.vertices_to_recheck)
         while not bitset_isempty(self.vertices_to_check):
-            #print "now will check", vertices_to_check
             bitset_clear(self.vertices_to_recheck)
             for vertex in range(self.num_vertices):
                 if bitset_in(self.vertices_to_check, vertex):
@@ -120,19 +111,14 @@ cdef class ZFSearchMetagraphNewAlg:
                         bitset_add(self.filled_set, self.vertex_to_fill)
             bitset_copy(self.vertices_to_check, self.vertices_to_recheck)
 
-        self.num_vertices_checked = self.num_vertices_checked + 1            
+        self.num_closures_calculated = self.num_closures_calculated + 1            
         
         set_to_return = FrozenBitset(capacity=self.num_vertices)
         bitset_copy(&set_to_return._bitset[0], self.filled_set)
-#        return FrozenBitset(bitset_list(self.filled_set), capacity=self.num_vertices)
         return set_to_return
     
 
     cdef neighbors_with_edges_add_to_queue(self, FrozenBitset meta_vertex, FastQueueForBFS the_queue, int previous_cost):
-        # verify that 'meta_vertex' is actually a subset of the vertices
-        # of self.primal_graph, to be interpreted as the filled subset
-        #print "neighbors requested for ", list(meta_vertex)
-
         cdef int new_vx_to_make_force
         cdef int cost
         cdef int i
@@ -158,7 +144,7 @@ cdef class ZFSearchMetagraphNewAlg:
 
     
     def get_num_closures_calculated(self):
-        return int(self.num_vertices_checked)
+        return int(self.num_closures_calculated)
     
 
 
@@ -166,9 +152,6 @@ cdef class ZFSearchMetagraphNewAlg:
 
 
 
-import itertools
-import random
-from sage.data_structures.bitset import Bitset, FrozenBitset
 
 
 cdef class FastQueueForBFS:
@@ -229,46 +212,37 @@ cdef class FastQueueForBFS:
 
 
 
-DijkstraMG = None
 
-def shortest(v, path_so_far, predecessor_list, start):
+def reconstruct_shortest_metagraph_path(v, path_so_far, predecessor_list, start):
     predecessor_of_v = predecessor_list[v]
     path_so_far.insert(0,predecessor_of_v)
     
     if predecessor_of_v[0] != start:
-        shortest(predecessor_of_v[0], path_so_far, predecessor_list, start)
+        reconstruct_shortest_metagraph_path(predecessor_of_v[0], path_so_far, predecessor_list, start)
     return path_so_far
 
-def build_zf_set(final_metavx_list):
-    global DijkstraMG #To access the graph's neighbors
-
+def build_zf_set(DijkstraMG, final_metavx_list):
     zf_set = set()
 
     for (filled_vertices, forcing_vx) in final_metavx_list[:-1]: #Do not need to do the last metavertex (everything is already filled)
         if forcing_vx not in filled_vertices: #If filled, don't need to add it to zf_set since it will already have been gotten for free
             zf_set.add(forcing_vx)
-#        filled_set.add(forcing_vx) #Fill forcing vertex
-        unfilled_neighbors = DijkstraMG.neighbors_dict[forcing_vx] - filled_vertices #Find n unfilled neighbors of forcing vertex
+        
+        # recover actual (not closed) neighborhood of our vertex to force
+        neighbors = DijkstraMG.closed_neighborhood_list[forcing_vx] - FrozenBitset([forcing_vx])
+        
+        # find unfilled neighbors of forcing vertex
+        unfilled_neighbors = neighbors - filled_vertices
     
-        if len(unfilled_neighbors)-1 > 0:
-            zf_set.update(set(itertools.islice(unfilled_neighbors, len(unfilled_neighbors)-1))) #Pick n-1 of them, the last will be gotten for free
-#        filled_set.update(DijkstraMG.neighbors_dict[forcing_vx]) #Fill all of the neighbors
+        unfilled_neighbor_iterator = iter(unfilled_neighbors)
+        num_to_fill_to_make_force = len(unfilled_neighbors)-1
+        for i in range(num_to_fill_to_make_force):
+            zf_set.add( next(unfilled_neighbor_iterator) )
+        
     return zf_set
 
-def dijkstra(metagraph, start, target):
-    return real_dijkstra(metagraph, start, target)
-
-cdef real_dijkstra(ZFSearchMetagraphNewAlg metagraph, start, target):
-    global DijkstraMG
-    DijkstraMG = metagraph
-
-    #cdef Bitset previous_closure
-    #cdef Bitset vx_and_neighbors
-    
-#    cdef frozenset current
-
-    cdef dict previous
-#    cdef list unvisited_queue
+cdef dijkstra(ZFSearchMetagraph metagraph, start, target):
+    cdef dict previous = {}
     
     cdef int current_distance
     cdef int cost_of_making_it_force
@@ -281,28 +255,18 @@ cdef real_dijkstra(ZFSearchMetagraphNewAlg metagraph, start, target):
     
     empty_FrozenBitset = FrozenBitset()
     
-    previous = {}
-#    unvisited_queue = [(0, start, None)]
     unvisited_queue = FastQueueForBFS(num_vertices_primal_graph)
     
-    start_FrozenBitset = FrozenBitset(start, capacity=num_vertices_primal_graph)
-    target_FrozenBitset = FrozenBitset(target, capacity=num_vertices_primal_graph)
-    
-    unvisited_queue.push( 0, (start_FrozenBitset, None) )
-#    heapq.heapify(unvisited_queue)
+    unvisited_queue.push( 0, (start, None) )
 
     done = False
     while not done:
-#        uv = heapq.heappop(unvisited_queue)
         current_distance, uv = unvisited_queue.pop_and_get_priority()
         
-#        current_distance = uv[0]
         parent = uv[0]
         vx_that_is_to_force = uv[1]
 
         previous_closure = parent
-#        test_capacity = max(parent)+1 if len(parent) > 0 else 1
-#        previous_closure.update(Bitset(parent, capacity=test_capacity))
 
         if vx_that_is_to_force != None:
             current = metagraph.extend_closure(previous_closure, metagraph.closed_neighborhood_list[vx_that_is_to_force])
@@ -312,30 +276,42 @@ cdef real_dijkstra(ZFSearchMetagraphNewAlg metagraph, start, target):
         if current in previous:
             continue
 
-#        superset_has_been_visited = False
-#        for seen_set in previous:
-#            if current.issubset(seen_set):
-#                superset_has_been_visited = True
-#                break
-#        if superset_has_been_visited:
-#            print "yay"
-#            continue
-            
-            
         previous[current] = (parent, vx_that_is_to_force)
 
-        if current == target_FrozenBitset: # We have found the target vertex, can stop searching now
+        if current == target:
             done = True
             break
         
         metagraph.neighbors_with_edges_add_to_queue(current, unvisited_queue, current_distance)
-            
-    temp = [(target_FrozenBitset, None)]
-    shortest_path = shortest(target_FrozenBitset, temp, previous, start_FrozenBitset)
 
-    print "Closures remaining on queue:                ", len(unvisited_queue)
-    print "Length of shortest path found in metagraph: ", len(shortest_path)
+            
+    term = [(target, None)]
+    shortest_path = reconstruct_shortest_metagraph_path(target, term, previous, start)
+
+#    print "Closures remaining on queue:                ", len(unvisited_queue)
+#    print "Length of shortest path found in metagraph: ", len(shortest_path)
 #    print "Shortest path found: ", shortest_path
 
-    
-    return build_zf_set(shortest_path)
+    return build_zf_set(metagraph, shortest_path)
+
+
+def zero_forcing_number(the_graph):
+    return len(smallest_zero_forcing_set(the_graph))
+
+def smallest_zero_forcing_set(the_graph, print_closures=False):
+    n = the_graph.num_verts()
+    temp = the_graph.copy()
+    orig_vertices = temp.relabel(return_map=True)
+    new_vertices = {}
+    for vertex in orig_vertices:
+        new_vertices[orig_vertices[vertex]] = vertex
+
+    metaGraph = ZFSearchMetagraph(temp)
+
+    all_unfilled = FrozenBitset([], capacity=n)
+    all_filled = FrozenBitset(range(n), capacity=n)
+
+    output = dijkstra(metaGraph, all_unfilled, all_filled)
+    if print_closures:
+        print "Closures calculated:", metaGraph.get_num_closures_calculated()
+    return {new_vertices[j] for j in output}
