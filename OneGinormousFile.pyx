@@ -7,7 +7,7 @@ include "sage/data_structures/bitset.pxi"
 include "cysignals/memory.pxi"
 
 # Define metagraph class in Python
-cdef class ZFSearchMetagraph:
+cdef class OrdinaryZeroForcingMetagraph:
     cdef:
         public int num_vertices 
         int num_closures_calculated, vertex_to_fill
@@ -241,7 +241,7 @@ def build_zf_set(DijkstraMG, final_metavx_list):
         
     return zf_set
 
-cdef dijkstra(ZFSearchMetagraph metagraph, start, target):
+cdef dijkstra(OrdinaryZeroForcingMetagraph metagraph, start, target):
     cdef dict previous = {}
     
     cdef int current_distance
@@ -306,7 +306,7 @@ def smallest_zero_forcing_set(the_graph, print_closures=False):
     for vertex in orig_vertices:
         new_vertices[orig_vertices[vertex]] = vertex
 
-    metaGraph = ZFSearchMetagraph(temp)
+    metaGraph = OrdinaryZeroForcingMetagraph(temp)
 
     all_unfilled = FrozenBitset([], capacity=n)
     all_filled = FrozenBitset(range(n), capacity=n)
