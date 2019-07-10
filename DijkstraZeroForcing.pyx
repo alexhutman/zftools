@@ -14,9 +14,16 @@ cdef class OrdinaryZeroForcingMetagraph:
         bitset_t *neighborhood_array 
 
         int num_closures_calculated
-    
-        # Initialize the working variables of type bitset_t
-        # for the method extend_closure()
+        
+        # When a variable of type bitset_t is initialized, memory is
+        # allocated on the heap.  For methods that use working variables
+        # of type bitset_t, we don't want this to happen every time the
+        # method is called, because that would be very slow.  So we
+        # keep these working variables as class attributes and allocate
+        # memory for them only when the class is initialized.
+        
+        # Initialize the working variables of type bitset_t for the
+        # method extend_closure()
         bitset_t filled_set
         bitset_t vertices_to_check
         bitset_t vertices_to_recheck
@@ -24,8 +31,8 @@ cdef class OrdinaryZeroForcingMetagraph:
         bitset_t unfilled_neighbors
         bitset_t filled_neighbors_of_vx_to_fill
     
-        # Initialize the working variables of type bitset_t
-        # for the method neighbors_with_edges_add_to_queue()
+        # Initialize the working variables of type bitset_t for the
+        # method neighbors_with_edges_add_to_queue()
         bitset_t meta_vertex
     
     
@@ -33,9 +40,11 @@ cdef class OrdinaryZeroForcingMetagraph:
     # on which it is defined has a vertex set of the form {0,...,n-1}
     def __cinit__(self, graph_for_zero_forcing):
         self.num_vertices = graph_for_zero_forcing.num_verts()
+
+        # Allocate memory for an array to vertex neighborhoods in the form of bitset_t's
         self.neighborhood_array = <bitset_t*> sig_malloc(self.num_vertices*sizeof(bitset_t))
         
-        # Initialize/clear extend_closure bitsets
+        # Initialize and allocate memory for working variables of type bitset_t
         bitset_init(self.filled_set, self.num_vertices)
         bitset_init(self.vertices_to_check, self.num_vertices)
         bitset_init(self.vertices_to_recheck, self.num_vertices)
@@ -50,14 +59,14 @@ cdef class OrdinaryZeroForcingMetagraph:
             temp_vertex_neighbors = FrozenBitset(graph_for_zero_forcing.neighbors(i) + [i])
             self.closed_neighborhood_list[i] = temp_vertex_neighbors
             
-        # create pointer to bitset array with neighborhoods
+        # Set up array to vertex neighborhoods in the form of bitset_t's
         for v in range(self.num_vertices):
             bitset_init(self.neighborhood_array[v], self.num_vertices)
             bitset_clear(self.neighborhood_array[v])
             for w in graph_for_zero_forcing.neighbors(v):
                 bitset_add(self.neighborhood_array[v], w)   
         
-        #The variable below is just for profiling purposes!
+        # The variable below is just used for profiling purposes
         self.num_closures_calculated = 0
         
     def __dealloc__(self):
@@ -75,8 +84,9 @@ cdef class OrdinaryZeroForcingMetagraph:
     cdef FrozenBitset extend_closure(self, FrozenBitset initially_filled_subset, FrozenBitset vxs_to_add):
         cdef int vertex_to_fill
         
-        # we used member variables so that we didn't have to keep allocating
-        # these stupid bitset_s on every call to extend_closure
+        # The following working variables of type bitset_t are implemented as
+        # class attributes to avoid allocating memory for them every time
+        # this function is called
         bitset_clear(self.filled_set)
         bitset_clear(self.vertices_to_check)
         bitset_clear(self.vertices_to_recheck)
