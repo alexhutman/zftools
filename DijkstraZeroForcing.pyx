@@ -6,26 +6,31 @@ from sage.data_structures.bitset import Bitset, FrozenBitset
 include "sage/data_structures/bitset.pxi"
 include "cysignals/memory.pxi"
 
-# Define metagraph class in Python
+# Define metagraph class in Cython
 cdef class OrdinaryZeroForcingMetagraph:
     cdef:
         public int num_vertices 
-        int num_closures_calculated, vertex_to_fill
+        public dict closed_neighborhood_list
         bitset_t *neighborhood_array 
-        set vertices_set
-        public dict neighbors_dict, closed_neighborhood_list
+
+        int num_closures_calculated
     
-        #for-loop counters
-        int i, j, v, w, vertex, new_vx_to_make_force
+        # Initialize the working variables of type bitset_t
+        # for the method extend_closure()
+        bitset_t filled_set
+        bitset_t vertices_to_check
+        bitset_t vertices_to_recheck
+        bitset_t filled_neighbors
+        bitset_t unfilled_neighbors
+        bitset_t filled_neighbors_of_vx_to_fill
     
-        # Initialize extend_closure variables
-        bitset_t filled_set, vertices_to_check, vertices_to_recheck, filled_neighbors, unfilled_neighbors, filled_neighbors_of_vx_to_fill
-    
-        # Initialize calculate_cost variables 
+        # Initialize the working variables of type bitset_t
+        # for the method neighbors_with_edges_add_to_queue()
         bitset_t meta_vertex
-        int numUnfilledNeighbors, accounter, cost
     
     
+    # The implementation of the metagraph class assumes that the "primal graph"
+    # on which it is defined has a vertex set of the form {0,...,n-1}
     def __cinit__(self, graph_for_zero_forcing):
         self.num_vertices = graph_for_zero_forcing.num_verts()
         self.neighborhood_array = <bitset_t*> sig_malloc(self.num_vertices*sizeof(bitset_t))
@@ -40,8 +45,6 @@ cdef class OrdinaryZeroForcingMetagraph:
         bitset_init(self.meta_vertex, self.num_vertices)
     
     def __init__(self, graph_for_zero_forcing):
-        self.vertices_set = set(graph_for_zero_forcing.vertices())
-        
         self.closed_neighborhood_list = {}
         for i in graph_for_zero_forcing.vertices():
             temp_vertex_neighbors = FrozenBitset(graph_for_zero_forcing.neighbors(i) + [i])
@@ -70,6 +73,7 @@ cdef class OrdinaryZeroForcingMetagraph:
     
     
     cdef FrozenBitset extend_closure(self, FrozenBitset initially_filled_subset, FrozenBitset vxs_to_add):
+        cdef int vertex_to_fill
         
         # we used member variables so that we didn't have to keep allocating
         # these stupid bitset_s on every call to extend_closure
@@ -101,17 +105,17 @@ cdef class OrdinaryZeroForcingMetagraph:
                     bitset_difference(self.unfilled_neighbors, self.neighborhood_array[vertex], self.filled_neighbors)
                     
                     if bitset_len(self.unfilled_neighbors) == 1:
-                        self.vertex_to_fill = bitset_next(self.unfilled_neighbors, 0)
-                        bitset_add(self.vertices_to_recheck, self.vertex_to_fill)
+                        vertex_to_fill = bitset_next(self.unfilled_neighbors, 0)
+                        bitset_add(self.vertices_to_recheck, vertex_to_fill)
                         
-                        bitset_intersection(self.filled_neighbors_of_vx_to_fill, self.neighborhood_array[self.vertex_to_fill], self.filled_set)
+                        bitset_intersection(self.filled_neighbors_of_vx_to_fill, self.neighborhood_array[vertex_to_fill], self.filled_set)
                         bitset_remove(self.filled_neighbors_of_vx_to_fill, vertex)
                         bitset_union(self.vertices_to_recheck, self.vertices_to_recheck, self.filled_neighbors_of_vx_to_fill)
                         
-                        bitset_add(self.filled_set, self.vertex_to_fill)
+                        bitset_add(self.filled_set, vertex_to_fill)
             bitset_copy(self.vertices_to_check, self.vertices_to_recheck)
 
-        self.num_closures_calculated = self.num_closures_calculated + 1            
+        self.num_closures_calculated += 1            
         
         set_to_return = FrozenBitset(capacity=self.num_vertices)
         bitset_copy(&set_to_return._bitset[0], self.filled_set)
@@ -126,7 +130,7 @@ cdef class OrdinaryZeroForcingMetagraph:
 
         bitset_copy(self.meta_vertex, &meta_vertex._bitset[0])
         
-        for new_vx_to_make_force in self.vertices_set:
+        for new_vx_to_make_force in range(self.num_vertices):
             bitset_copy(self.unfilled_neighbors, self.neighborhood_array[new_vx_to_make_force])
             bitset_difference(self.unfilled_neighbors, self.unfilled_neighbors, self.meta_vertex)
             num_unfilled_neighbors = bitset_len(self.unfilled_neighbors)
