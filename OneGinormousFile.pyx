@@ -141,7 +141,26 @@ cdef class OrdinaryZeroForcingMetagraph:
 
             if cost > 0:
                 the_queue.push( previous_cost + cost,  (meta_vertex, new_vx_to_make_force) )
+    
+    def forcing_set_from_metagraph_path(self, metagraph_path):
+        zf_set = set()
 
+        for (filled_vertices, forcing_vx) in metagraph_path[:-1]: #Do not need to do the last metavertex (everything is already filled)
+            if forcing_vx not in filled_vertices: #If filled, don't need to add it to zf_set since it will already have been gotten for free
+                zf_set.add(forcing_vx)
+        
+            # recover actual (not closed) neighborhood of our vertex to force
+            neighbors = self.closed_neighborhood_list[forcing_vx] - FrozenBitset([forcing_vx])
+        
+            # find unfilled neighbors of forcing vertex
+            unfilled_neighbors = neighbors - filled_vertices
+    
+            unfilled_neighbor_iterator = iter(unfilled_neighbors)
+            num_to_fill_to_make_force = len(unfilled_neighbors)-1
+            for i in range(num_to_fill_to_make_force):
+                zf_set.add( next(unfilled_neighbor_iterator) )
+        
+        return zf_set
     
     def get_num_closures_calculated(self):
         return int(self.num_closures_calculated)
@@ -221,26 +240,6 @@ def reconstruct_shortest_metagraph_path(v, path_so_far, predecessor_list, start)
         reconstruct_shortest_metagraph_path(predecessor_of_v[0], path_so_far, predecessor_list, start)
     return path_so_far
 
-def build_zf_set(DijkstraMG, final_metavx_list):
-    zf_set = set()
-
-    for (filled_vertices, forcing_vx) in final_metavx_list[:-1]: #Do not need to do the last metavertex (everything is already filled)
-        if forcing_vx not in filled_vertices: #If filled, don't need to add it to zf_set since it will already have been gotten for free
-            zf_set.add(forcing_vx)
-        
-        # recover actual (not closed) neighborhood of our vertex to force
-        neighbors = DijkstraMG.closed_neighborhood_list[forcing_vx] - FrozenBitset([forcing_vx])
-        
-        # find unfilled neighbors of forcing vertex
-        unfilled_neighbors = neighbors - filled_vertices
-    
-        unfilled_neighbor_iterator = iter(unfilled_neighbors)
-        num_to_fill_to_make_force = len(unfilled_neighbors)-1
-        for i in range(num_to_fill_to_make_force):
-            zf_set.add( next(unfilled_neighbor_iterator) )
-        
-    return zf_set
-
 cdef dijkstra(OrdinaryZeroForcingMetagraph metagraph, start, target):
     cdef dict previous = {}
     
@@ -292,7 +291,7 @@ cdef dijkstra(OrdinaryZeroForcingMetagraph metagraph, start, target):
 #    print "Length of shortest path found in metagraph: ", len(shortest_path)
 #    print "Shortest path found: ", shortest_path
 
-    return build_zf_set(metagraph, shortest_path)
+    return metagraph.forcing_set_from_metagraph_path(shortest_path)
 
 
 def zero_forcing_number(the_graph):
