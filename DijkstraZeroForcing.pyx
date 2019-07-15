@@ -296,7 +296,6 @@ cdef dijkstra(OrdinaryZeroForcingMetagraph metagraph, start, target):
             break
         
         metagraph.neighbors_with_edges_add_to_queue(current, unvisited_queue, current_distance)
-
             
     term = [(target, None)]
     shortest_path = reconstruct_shortest_metagraph_path(target, term, previous, start)
@@ -311,20 +310,27 @@ cdef dijkstra(OrdinaryZeroForcingMetagraph metagraph, start, target):
 def zero_forcing_number(the_graph):
     return len(smallest_zero_forcing_set(the_graph))
 
-def smallest_zero_forcing_set(the_graph, print_closures=False):
-    n = the_graph.num_verts()
-    temp = the_graph.copy()
-    orig_vertices = temp.relabel(return_map=True)
-    new_vertices = {}
-    for vertex in orig_vertices:
-        new_vertices[orig_vertices[vertex]] = vertex
+def smallest_zero_forcing_set(the_graph, print_num_closures_calculated=False):
+    num_vertices = the_graph.num_verts()
 
-    metaGraph = OrdinaryZeroForcingMetagraph(temp)
+    # The graph we have been passed may not have its vertex set of the form {0,...,n-1}
+    # so make a copy of it and relabel the vertices -- then store a dictionary that maps
+    # each original vertex label to the integer that is the new label for that vertex.
+    relabeled_graph = the_graph.copy()
+    relabeling_map = relabeled_graph.relabel(return_map=True)
 
-    all_unfilled = FrozenBitset([], capacity=n)
-    all_filled = FrozenBitset(range(n), capacity=n)
+    # Now make a dictionary mapping each new integer label back to its vertex label in
+    # the original graph
+    old_vertex_label_dict = {}
+    for vertex in the_graph.vertices():
+        old_vertex_label_dict[relabeling_map[vertex]] = vertex
 
-    output = dijkstra(metaGraph, all_unfilled, all_filled)
-    if print_closures:
-        print "Closures calculated:", metaGraph.get_num_closures_calculated()
-    return {new_vertices[j] for j in output}
+    metagraph = OrdinaryZeroForcingMetagraph(relabeled_graph)
+
+    all_unfilled = FrozenBitset([], capacity=num_vertices)
+    all_filled = FrozenBitset(range(num_vertices), capacity=num_vertices)
+    output = dijkstra(metagraph, all_unfilled, all_filled)
+    
+    if print_num_closures_calculated:
+        print "Closures calculated:", metagraph.get_num_closures_calculated()
+    return {old_vertex_label_dict[j] for j in output}
