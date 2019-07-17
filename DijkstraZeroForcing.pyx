@@ -264,8 +264,6 @@ cdef dijkstra(OrdinaryZeroForcingMetagraph metagraph, start, target):
         int new_dist
 
         int num_vertices_primal_graph = metagraph.num_vertices
-        
-        FrozenBitset empty_FrozenBitset = FrozenBitset()
     
     unvisited_queue = FastQueueForBFS(num_vertices_primal_graph)
     
@@ -277,10 +275,10 @@ cdef dijkstra(OrdinaryZeroForcingMetagraph metagraph, start, target):
         
         previous_metavertex, metagraph_edge_data = current_metavertex_info
 
-        if metagraph_edge_data != None:
-            current = metagraph.extend_closure(previous_metavertex, metagraph.closed_neighborhood_list[metagraph_edge_data])
+        if metagraph_edge_data == None:
+            current = previous_metavertex
         else:
-            current = empty_FrozenBitset
+            current = metagraph.extend_closure(previous_metavertex, metagraph.closed_neighborhood_list[metagraph_edge_data])
         
         if current in parent_dict:
             continue
