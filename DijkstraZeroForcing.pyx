@@ -232,7 +232,7 @@ cdef class FastQueueForBFS:
                 break
         return item_to_return
     
-    cdef tuple pop_and_get_priority(self):
+    cdef tuple pop_with_priority(self):
         if self.smallest_nonempty_priority > self.max_possible_priority:
             return None
         else:
@@ -257,12 +257,12 @@ cdef class FastQueueForBFS:
 
 
 
-def reconstruct_shortest_metagraph_path(v, path_so_far, predecessor_list, start):
+def reconstruct_metagraph_shortest_path(v, path_so_far, predecessor_list, start):
     predecessor_of_v = predecessor_list[v]
     path_so_far.insert(0,predecessor_of_v)
     
     if predecessor_of_v[0] != start:
-        reconstruct_shortest_metagraph_path(predecessor_of_v[0], path_so_far, predecessor_list, start)
+        reconstruct_metagraph_shortest_path(predecessor_of_v[0], path_so_far, predecessor_list, start)
     return path_so_far
 
 cdef dijkstra(OrdinaryZeroForcingMetagraph metagraph, start, target):
@@ -277,38 +277,38 @@ cdef dijkstra(OrdinaryZeroForcingMetagraph metagraph, start, target):
         int num_vertices_primal_graph = metagraph.num_vertices
     
     unvisited_queue = FastQueueForBFS(num_vertices_primal_graph)
-    
     unvisited_queue.push(0, (start, None))
 
-    done = False
-    while not done:
-        current_distance, current_metavertex_info = unvisited_queue.pop_and_get_priority()
+    while True:
+        current_distance, current_metavertex_info = unvisited_queue.pop_with_priority()
         
-        previous_metavertex, metagraph_edge_data = current_metavertex_info
+        previous_metavertex, metaedge_data = current_metavertex_info
 
-        if metagraph_edge_data == None:
+        if metaedge_data == None:
             current = previous_metavertex
         else:
-            current = metagraph.generate_next_metavx(previous_metavertex, metagraph_edge_data)
+            current = metagraph.generate_next_metavx(previous_metavertex, metaedge_data)
         
+        # Check whether we have explored from this metavertex already, by seeing if we
+        # have stored a parent for it; if so, then we can skip exploring from it again
         if current in parent_dict:
             continue
 
-        parent_dict[current] = (previous_metavertex, metagraph_edge_data)
+        # Need to store both what the parent metavertex was, as well as whatever data
+        # was associated with the edge that was followed to get to the new metavertex
+        parent_dict[current] = (previous_metavertex, metaedge_data)
 
         if current == target:
-            done = True
             break
         
+        # If the current metavertex is not the target of the Dijkstra search (which
+        # normally will be the set of all vertices) then "explore from" this one by
+        # adding to the queue just what is needed to generate all of its neighbors
         metagraph.neighbors_with_edges_add_to_queue(current, unvisited_queue,
             current_distance)
             
     term = [(target, None)]
-    shortest_path = reconstruct_shortest_metagraph_path(target, term, parent_dict, start)
-
-#    print "Closures remaining on queue:                ", len(unvisited_queue)
-#    print "Length of shortest path found in metagraph: ", len(shortest_path)
-#    print "Shortest path found: ", shortest_path
+    shortest_path = reconstruct_metagraph_shortest_path(target, term, parent_dict, start)
 
     return metagraph.forcing_set_from_metagraph_path(shortest_path)
 
