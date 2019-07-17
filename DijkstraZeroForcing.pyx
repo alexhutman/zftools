@@ -255,50 +255,47 @@ def reconstruct_shortest_metagraph_path(v, path_so_far, predecessor_list, start)
     return path_so_far
 
 cdef dijkstra(OrdinaryZeroForcingMetagraph metagraph, start, target):
-    cdef dict previous = {}
-    
-    cdef int current_distance
-    cdef int cost_of_making_it_force
-    cdef int what_forced
-    cdef int new_dist
-    
-    cdef int num_vertices_primal_graph
+    cdef:
+        dict parent_dict = {}
 
-    num_vertices_primal_graph = metagraph.num_vertices
-    
-    empty_FrozenBitset = FrozenBitset()
+        int current_distance
+        int cost_of_making_it_force
+        int what_forced
+        int new_dist
+
+        int num_vertices_primal_graph = metagraph.num_vertices
+        
+        FrozenBitset empty_FrozenBitset = FrozenBitset()
     
     unvisited_queue = FastQueueForBFS(num_vertices_primal_graph)
     
-    unvisited_queue.push( 0, (start, None) )
+    unvisited_queue.push(0, (start, None))
 
     done = False
     while not done:
-        current_distance, uv = unvisited_queue.pop_and_get_priority()
+        current_distance, current_metavertex_info = unvisited_queue.pop_and_get_priority()
         
-        parent = uv[0]
-        vx_that_is_to_force = uv[1]
+        previous_metavertex, metagraph_edge_data = current_metavertex_info
 
-        previous_closure = parent
-
-        if vx_that_is_to_force != None:
-            current = metagraph.extend_closure(previous_closure, metagraph.closed_neighborhood_list[vx_that_is_to_force])
+        if metagraph_edge_data != None:
+            current = metagraph.extend_closure(previous_metavertex, metagraph.closed_neighborhood_list[metagraph_edge_data])
         else:
             current = empty_FrozenBitset
         
-        if current in previous:
+        if current in parent_dict:
             continue
 
-        previous[current] = (parent, vx_that_is_to_force)
+        parent_dict[current] = (previous_metavertex, metagraph_edge_data)
 
         if current == target:
             done = True
             break
         
-        metagraph.neighbors_with_edges_add_to_queue(current, unvisited_queue, current_distance)
+        metagraph.neighbors_with_edges_add_to_queue(current, unvisited_queue,
+            current_distance)
             
     term = [(target, None)]
-    shortest_path = reconstruct_shortest_metagraph_path(target, term, previous, start)
+    shortest_path = reconstruct_shortest_metagraph_path(target, term, parent_dict, start)
 
 #    print "Closures remaining on queue:                ", len(unvisited_queue)
 #    print "Length of shortest path found in metagraph: ", len(shortest_path)
