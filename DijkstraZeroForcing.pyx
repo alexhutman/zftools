@@ -80,7 +80,18 @@ cdef class OrdinaryZeroForcingMetagraph:
         bitset_free(self.filled_neighbors_of_vx_to_fill)
         bitset_free(self.meta_vertex)
     
-    
+    cdef FrozenBitset generate_next_metavx(self, FrozenBitset initial_metavx, edge_data):
+        cdef FrozenBitset closed_nhood_of_vx_to_force
+        cdef FrozenBitset new_closure
+        
+        # Interpret the edge data as just the label of a single vertex that will be
+        # the one 'induced to force' to produce the closure that is the new metavertex
+        closed_nhood_of_vx_to_force = self.closed_neighborhood_list[edge_data]
+
+        new_closure = self.extend_closure(initial_metavx, closed_nhood_of_vx_to_force)
+
+        return new_closure
+
     cdef FrozenBitset extend_closure(self, FrozenBitset initially_filled_subset, FrozenBitset vxs_to_add):
         cdef int vertex_to_fill
         
@@ -278,7 +289,7 @@ cdef dijkstra(OrdinaryZeroForcingMetagraph metagraph, start, target):
         if metagraph_edge_data == None:
             current = previous_metavertex
         else:
-            current = metagraph.extend_closure(previous_metavertex, metagraph.closed_neighborhood_list[metagraph_edge_data])
+            current = metagraph.generate_next_metavx(previous_metavertex, metagraph_edge_data)
         
         if current in parent_dict:
             continue
