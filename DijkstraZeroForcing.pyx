@@ -284,7 +284,7 @@ cdef dijkstra(OrdinaryZeroForcingMetagraph metagraph, start, target):
         
         previous_metavertex, metaedge_data = current_metavertex_info
 
-        if metaedge_data == None:
+        if metaedge_data is None:
             current = previous_metavertex
         else:
             current = metagraph.generate_next_metavx(previous_metavertex, metaedge_data)
