@@ -258,11 +258,16 @@ cdef class FastQueueForBFS:
 
 
 def reconstruct_metagraph_shortest_path(v, path_so_far, predecessor_list, start):
-    predecessor_of_v = predecessor_list[v]
-    path_so_far.insert(0,predecessor_of_v)
-    
-    if predecessor_of_v[0] != start:
-        reconstruct_metagraph_shortest_path(predecessor_of_v[0], path_so_far, predecessor_list, start)
+    # I'm aware that I'm doing the same thing inside and outside the loop, but comparison between None and Bitset() doesn't work
+    # and this is easier
+    predecessor_and_parent_of_v = predecessor_list[v]
+    predecessor_of_v = predecessor_and_parent_of_v[0]
+    path_so_far.insert(0,predecessor_and_parent_of_v)
+
+    while predecessor_of_v != start:
+        predecessor_and_parent_of_v = predecessor_list[predecessor_of_v]
+        predecessor_of_v = predecessor_and_parent_of_v[0]
+        path_so_far.insert(0,predecessor_and_parent_of_v)
     return path_so_far
 
 cdef dijkstra(OrdinaryZeroForcingMetagraph metagraph, start, target):
