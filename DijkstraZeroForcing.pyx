@@ -257,19 +257,6 @@ cdef class FastQueueForBFS:
 
 
 
-def reconstruct_metagraph_shortest_path(v, path_so_far, predecessor_list, start):
-    # I'm aware that I'm doing the same thing inside and outside the loop, but comparison between None and Bitset() doesn't work
-    # and this is easier
-    predecessor_and_parent_of_v = predecessor_list[v]
-    predecessor_of_v = predecessor_and_parent_of_v[0]
-    path_so_far.insert(0,predecessor_and_parent_of_v)
-
-    while predecessor_of_v != start:
-        predecessor_and_parent_of_v = predecessor_list[predecessor_of_v]
-        predecessor_of_v = predecessor_and_parent_of_v[0]
-        path_so_far.insert(0,predecessor_and_parent_of_v)
-    return path_so_far
-
 cdef dijkstra(OrdinaryZeroForcingMetagraph metagraph, start, target):
     cdef:
         dict parent_dict = {}
@@ -312,8 +299,12 @@ cdef dijkstra(OrdinaryZeroForcingMetagraph metagraph, start, target):
         metagraph.neighbors_with_edges_add_to_queue(current, unvisited_queue,
             current_distance)
             
-    term = [(target, None)]
-    shortest_path = reconstruct_metagraph_shortest_path(target, term, parent_dict, start)
+    shortest_path = [(target, None)]
+    current_metavertex = target
+    while current_metavertex != start:
+        predecessor_and_metaedge_data = parent_dict[current_metavertex]
+        shortest_path.insert(0,predecessor_and_metaedge_data)
+        current_metavertex = predecessor_and_metaedge_data[0]
 
     return metagraph.forcing_set_from_metagraph_path(shortest_path)
 
