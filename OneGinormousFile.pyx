@@ -1,11 +1,32 @@
 # cython: profile=False
 
-#from sage.all import *
 from sage.graphs.all import Graph
 
-include "sage/data_structures/bitset.pxi"
+from sage.data_structures.bitset cimport (
+    Bitset,
+    FrozenBitset
+)
+from sage.data_structures.bitset_base cimport (
+    bitset_add,
+    bitset_clear,
+    bitset_copy,
+    bitset_difference,
+    bitset_free,
+    bitset_in,
+    bitset_init,
+    bitset_intersection,
+    bitset_isempty,
+    bitset_len,
+    bitset_next,
+    bitset_remove,
+    bitset_t,
+    bitset_union
+)
 
-include "cysignals/memory.pxi"
+from cysignals.memory cimport (
+    sig_free,
+    sig_malloc
+)
 
 # Define metagraph class in Python
 cdef class ZFSearchMetagraphNewAlg:
@@ -56,12 +77,12 @@ cdef class ZFSearchMetagraphNewAlg:
             self.closed_neighborhood_list[i] = temp_vertex_neighbors
             
         
-            
+        cdef int w
         # create pointer to bitset array with neighborhoods
         for v in range(self.num_vertices):
             bitset_init(self.neighborhood_array[v], self.num_vertices)
             bitset_clear(self.neighborhood_array[v])
-            for w in graph_for_zero_forcing.neighbors(v):
+            for w in graph_for_zero_forcing.neighbor_iterator(v):
                 bitset_add(self.neighborhood_array[v], w)   
         
         #The variable below is just for profiling purposes!
@@ -333,8 +354,8 @@ cdef real_dijkstra(ZFSearchMetagraphNewAlg metagraph, start, target):
     temp = [(target_FrozenBitset, None)]
     shortest_path = shortest(target_FrozenBitset, temp, previous, start_FrozenBitset)
 
-    print "Closures remaining on queue:                ", len(unvisited_queue)
-    print "Length of shortest path found in metagraph: ", len(shortest_path)
+    print("Closures remaining on queue:", len(unvisited_queue))
+    print("Length of shortest path found in metagraph:", len(shortest_path))
 #    print "Shortest path found: ", shortest_path
 
     
