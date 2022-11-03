@@ -7,8 +7,8 @@ from sage.data_structures.bitset cimport (
     FrozenBitset
 )
 
-from zeroforcing.fastqueue.fastqueue import FastQueueForBFS
-from zeroforcing.metagraph.metagraph cimport ZFSearchMetagraph
+from fastqueue.fastqueue import FastQueueForBFS
+from metagraph.metagraph cimport ZFSearchMetagraph
 
 
 import itertools
