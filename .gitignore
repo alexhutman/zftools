@@ -1,2 +1,5 @@
-.ipynb_checkpoints/*
 *.pyc
+build/
+.ipynb_checkpoints/*
+zeroforcing/*.c
+zeroforcing/*.so
