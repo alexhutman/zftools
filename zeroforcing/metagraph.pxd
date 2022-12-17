@@ -27,7 +27,3 @@ cdef class ZFSearchMetagraph:
 
     cdef set build_zf_set(self, list)
     cpdef set dijkstra(self, frozenset, frozenset)
-
-#cdef class PathNode:
-    #cdef public FrozenBitset current_metavertex
-    #cdef public FrozenBitset parent

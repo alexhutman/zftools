@@ -159,8 +159,6 @@ cdef class ZFSearchMetagraph:
     cpdef get_num_closures_calculated(self):
         return int(self.num_vertices_checked)
 
-    ############################################ TODO: REMOVEEEEEEEEEEEEEEE ############################################
-
     @staticmethod
     cdef list shortest(FrozenBitset v, list path_so_far, dict predecessor_list, FrozenBitset start_frozenbitset):
         predecessor_of_v = predecessor_list[v]
@@ -230,12 +228,3 @@ cdef class ZFSearchMetagraph:
         #print("Length of shortest path found in metagraph:", len(shortest_path))
         #print("Shortest path found:", shortest_path)
         return self.build_zf_set(shortest_path)
-
-
-"""
-class PathNode:
-    # Both args are FrozenBitsets
-    def __init__(self, current_metavertex, parent):
-        self.current_metavertex = current_metavertex
-        self.parent = parent
-"""
