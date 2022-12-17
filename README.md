@@ -6,7 +6,8 @@ This program calculates the zero forcing number (and set) of any graph. The zero
 ## Usage:
 ### Build:
 `sage --python3 setup.py build_ext`
-Using Cython compiler directive `language_level=3`:
+
+### Build using Cython compiler directive `language_level=3`:
 `sage --python3 setup.py build_ext --compiler-lang=3`
 
 ### Clean:
