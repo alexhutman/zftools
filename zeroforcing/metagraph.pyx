@@ -1,3 +1,5 @@
+import itertools
+
 from sage.data_structures.bitset cimport (
     Bitset,
     FrozenBitset
@@ -25,7 +27,8 @@ from cysignals.memory cimport (
     sig_malloc
 )
 
-from zeroforcing.fastqueue.fastqueue cimport FastQueueForBFS
+from zeroforcing.fastqueue cimport FastQueueForBFS
+
 
 cdef class ZFSearchMetagraph:
     def __cinit__(self, graph_for_zero_forcing):
@@ -77,7 +80,6 @@ cdef class ZFSearchMetagraph:
     
     
     cdef FrozenBitset extend_closure(self, FrozenBitset initially_filled_subset2, FrozenBitset vxs_to_add2):
-        
         cdef bitset_t initially_filled_subset
         cdef bitset_t vxs_to_add
         
@@ -154,5 +156,86 @@ cdef class ZFSearchMetagraph:
                 the_queue.push( previous_cost + cost,  (meta_vertex, new_vx_to_make_force) )
 
     
-    def get_num_closures_calculated(self):
+    cpdef get_num_closures_calculated(self):
         return int(self.num_vertices_checked)
+
+    ############################################ TODO: REMOVEEEEEEEEEEEEEEE ############################################
+
+    @staticmethod
+    cdef list shortest(FrozenBitset v, list path_so_far, dict predecessor_list, FrozenBitset start_frozenbitset):
+        predecessor_of_v = predecessor_list[v]
+        path_so_far.insert(0,predecessor_of_v)
+        
+        if predecessor_of_v[0] != start_frozenbitset:
+            ZFSearchMetagraph.shortest(predecessor_of_v[0], path_so_far, predecessor_list, start_frozenbitset)
+        return path_so_far
+
+    cdef set build_zf_set(self, list final_metavx_list):
+        zf_set = set()
+
+        for (filled_vertices, forcing_vx) in final_metavx_list[:-1]: #Do not need to do the last metavertex (everything is already filled)
+            if forcing_vx not in filled_vertices: #If filled, don't need to add it to zf_set since it will already have been gotten for free
+                zf_set.add(forcing_vx)
+            # filled_set.add(forcing_vx) #Fill forcing vertex
+            unfilled_neighbors = self.neighbors_dict[forcing_vx] - filled_vertices #Find n unfilled neighbors of forcing vertex
+        
+            if len(unfilled_neighbors)-1 > 0:
+                zf_set.update(set(itertools.islice(unfilled_neighbors, len(unfilled_neighbors)-1))) #Pick n-1 of them, the last will be gotten for free
+            # filled_set.update(self.neighbors_dict[forcing_vx]) #Fill all of the neighbors
+        return zf_set
+
+    cpdef set dijkstra(self, frozenset start, frozenset target):
+        cdef dict previous
+        cdef int current_distance
+        cdef int cost_of_making_it_force
+        cdef int what_forced
+        cdef int new_dist
+        cdef int num_vertices_primal_graph
+
+        num_vertices_primal_graph = self.num_vertices
+        empty_FrozenBitset = FrozenBitset()
+        previous = {}
+        # unvisited_queue = [(0, start, None)]
+        unvisited_queue = FastQueueForBFS(num_vertices_primal_graph)
+        
+        start_FrozenBitset = FrozenBitset(start, capacity=num_vertices_primal_graph)
+        target_FrozenBitset = FrozenBitset(target, capacity=num_vertices_primal_graph)
+        
+        unvisited_queue.push( 0, (start_FrozenBitset, None) )
+
+        while True:
+            current_distance, uv = unvisited_queue.pop_and_get_priority()
+            
+            parent = uv[0]
+            vx_that_is_to_force = uv[1]
+            previous_closure = parent
+
+            if vx_that_is_to_force != None:
+                current = self.extend_closure(previous_closure, self.closed_neighborhood_list[vx_that_is_to_force])
+            else:
+                current = empty_FrozenBitset
+            
+            if current in previous:
+                continue
+
+            previous[current] = (parent, vx_that_is_to_force)
+            if current == target_FrozenBitset: # We have found the target vertex, can stop searching now
+                break
+            self.neighbors_with_edges_add_to_queue(current, unvisited_queue, current_distance)
+                
+        temp = [(target_FrozenBitset, None)]
+        shortest_path = ZFSearchMetagraph.shortest(target_FrozenBitset, temp, previous, start_FrozenBitset)
+
+        #print("Closures remaining on queue:", len(unvisited_queue))
+        #print("Length of shortest path found in metagraph:", len(shortest_path))
+        #print("Shortest path found:", shortest_path)
+        return self.build_zf_set(shortest_path)
+
+
+"""
+class PathNode:
+    # Both args are FrozenBitsets
+    def __init__(self, current_metavertex, parent):
+        self.current_metavertex = current_metavertex
+        self.parent = parent
+"""

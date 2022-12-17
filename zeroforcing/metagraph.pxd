@@ -1,13 +1,8 @@
-from sage.data_structures.bitset cimport (
-    Bitset,
-    FrozenBitset
-)
+from sage.data_structures.bitset cimport Bitset, FrozenBitset
+from sage.data_structures.bitset_base cimport bitset_t
+from sage.graphs.all import Graph
 
-from sage.data_structures.bitset_base cimport (
-    bitset_t
-)
-
-from zeroforcing.fastqueue.fastqueue cimport FastQueueForBFS
+from zeroforcing.fastqueue cimport FastQueueForBFS
 
 cdef class ZFSearchMetagraph:
     cdef public int num_vertices 
@@ -26,3 +21,13 @@ cdef class ZFSearchMetagraph:
     cdef FrozenBitset extend_closure(self, FrozenBitset, FrozenBitset)
     cdef neighbors_with_edges_add_to_queue(self, FrozenBitset, FastQueueForBFS, int)
     cpdef get_num_closures_calculated(self)
+
+    @staticmethod
+    cdef list shortest(FrozenBitset, list, dict, FrozenBitset)
+
+    cdef set build_zf_set(self, list)
+    cpdef set dijkstra(self, frozenset, frozenset)
+
+#cdef class PathNode:
+    #cdef public FrozenBitset current_metavertex
+    #cdef public FrozenBitset parent
