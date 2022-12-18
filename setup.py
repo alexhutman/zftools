@@ -114,10 +114,12 @@ class CleanZeroForcing(clean):
         # We're removing files from the filesystem, so it's better to be careful :)
         all_ext_src_paths = (Path(source) for ext in _extension_modules for source in ext.sources) # TODO: get these recursively in case Extensions are nested (if even possible?)
         artifact_exts = [".c", ".*.so"]
-        subdirs = ["", "**"] # Current directory and all subdirectories
-
-        all_pycache_path_globs = {(Path(ext.name.split('.')[0]) / Path(subdir) / "__pycache__") for ext in _extension_modules for subdir in subdirs}
         all_artifact_paths = CleanZeroForcing.__get_artifact_globs_gen(all_ext_src_paths, artifact_exts)
+
+        pycache_dir_name = "__pycache__"
+        pycache_subdirs = ["", "**"] # Extension module directory and all subdirectories
+        all_pycache_path_globs = {(Path(ext.name.split('.')[0]) / Path(subdir) / pycache_dir_name) for ext in _extension_modules for subdir in pycache_subdirs}
+        all_pycache_path_globs.add(Path("test") / pycache_dir_name)
 
         all_paths_to_remove = itertools.chain(all_pycache_path_globs, all_artifact_paths)
         for path_to_remove in map(Path, all_paths_to_remove):
