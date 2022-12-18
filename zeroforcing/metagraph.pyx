@@ -181,10 +181,13 @@ cdef class ZFSearchMetagraph:
     @staticmethod
     cdef list shortest(FrozenBitset v, list path_so_far, dict predecessor_list, FrozenBitset start_frozenbitset):
         predecessor_of_v = predecessor_list[v]
-        path_so_far.insert(0,predecessor_of_v)
+        path_so_far.append(predecessor_of_v)
         
-        if predecessor_of_v[0] != start_frozenbitset:
-            ZFSearchMetagraph.shortest(predecessor_of_v[0], path_so_far, predecessor_list, start_frozenbitset)
+        while predecessor_of_v[0] != start_frozenbitset:
+            v = predecessor_of_v[0]
+            predecessor_of_v = predecessor_list[v]
+            path_so_far.append(predecessor_of_v)
+        path_so_far.reverse()
         return path_so_far
 
     cdef set build_zf_set(self, list final_metavx_list):
