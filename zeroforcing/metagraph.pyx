@@ -27,7 +27,7 @@ from cysignals.memory cimport (
     sig_malloc
 )
 
-from zeroforcing.fastqueue cimport FastQueueForBFS
+from fastqueue cimport FastQueueForBFS
 
 
 cdef class ZFSearchMetagraph:
@@ -45,23 +45,46 @@ cdef class ZFSearchMetagraph:
         bitset_init(self.filled_neighbors_of_vx_to_fill, self.num_vertices)
         bitset_init(self.meta_vertex, self.num_vertices)
     
+    cpdef object to_orig_vertex(self, int relabeled_vertex):
+        return self.relabeled_to_orig_verts[relabeled_vertex]
+
+    cpdef object __to_orig_metavertex_iter(self, object relabeled_metavertex_iter):
+        return map(self.to_orig_vertex, relabeled_metavertex_iter)
+
+    cpdef frozenset to_orig_metavertex(self, object relabeled_metavertex_iter):
+        return frozenset(self.__to_orig_metavertex_iter(relabeled_metavertex_iter))
+
+    cpdef int to_relabeled_vertex(self, object orig_vertex):
+        return self.orig_to_relabeled_verts[orig_vertex]
+
+    cpdef object __to_relabeled_metavertex_iter(self, object orig_vertex_iter):
+        return map(self.to_relabeled_vertex, orig_vertex_iter)
+
+    cpdef frozenset to_relabeled_metavertex(self, object orig_vertex_iter):
+        return frozenset(self.__to_relabeled_metavertex_iter(orig_vertex_iter))
+
     def __init__(self, graph_for_zero_forcing):
-        self.vertices_set = set(graph_for_zero_forcing.vertices())
+        graph_copy = graph_for_zero_forcing.copy()
+        self.orig_to_relabeled_verts = graph_copy.relabel(inplace=True, return_map=True)
+        self.relabeled_to_orig_verts = {v: k for k,v in self.orig_to_relabeled_verts.items()}
+        
+        self.vertices_set = set(graph_copy.vertices(sort=False))
         
         self.neighbors_dict = {}
         self.closed_neighborhood_list = {}
-        
-        for i in graph_for_zero_forcing.vertices():
+
+        for i in self.vertices_set:
             #TODO: Only so Dijkstra code doesn't break. Ideally want to remove this somehow
-            self.neighbors_dict[i] = FrozenBitset(graph_for_zero_forcing.neighbors(i))
-            self.closed_neighborhood_list[i] = FrozenBitset(graph_for_zero_forcing.neighbors(i) + [i])
+            neighbors = graph_copy.neighbors(i)
+            self.neighbors_dict[i] = FrozenBitset(neighbors)
+            self.closed_neighborhood_list[i] = FrozenBitset(neighbors + [i])
         
         cdef int w
         # create pointer to bitset array with neighborhoods
         for v in range(self.num_vertices):
             bitset_init(self.neighborhood_array[v], self.num_vertices)
             bitset_clear(self.neighborhood_array[v])
-            for w in graph_for_zero_forcing.neighbor_iterator(v):
+            for w in graph_copy.neighbor_iterator(v):
                 bitset_add(self.neighborhood_array[v], w)   
         
         #The variable below is just for profiling purposes!
@@ -77,8 +100,7 @@ cdef class ZFSearchMetagraph:
         bitset_free(self.unfilled_neighbors)
         bitset_free(self.filled_neighbors_of_vx_to_fill)
         bitset_free(self.meta_vertex)
-    
-    
+
     cdef FrozenBitset extend_closure(self, FrozenBitset initially_filled_subset2, FrozenBitset vxs_to_add2):
         cdef bitset_t initially_filled_subset
         cdef bitset_t vxs_to_add
@@ -193,7 +215,7 @@ cdef class ZFSearchMetagraph:
         start_FrozenBitset = FrozenBitset(start, capacity=num_vertices_primal_graph)
         target_FrozenBitset = FrozenBitset(target, capacity=num_vertices_primal_graph)
         
-        unvisited_queue.push( 0, (start_FrozenBitset, None) )
+        unvisited_queue.push(0, (start_FrozenBitset, None))
 
         while True:
             current_distance, uv = unvisited_queue.pop_and_get_priority()
@@ -217,5 +239,6 @@ cdef class ZFSearchMetagraph:
                 
         temp = [(target_FrozenBitset, None)]
         shortest_path = ZFSearchMetagraph.shortest(target_FrozenBitset, temp, previous, start_FrozenBitset)
+        zf_set_with_old_labels = set(map(self.to_orig_vertex, self.build_zf_set(shortest_path)))
 
-        return self.build_zf_set(shortest_path)
+        return zf_set_with_old_labels
