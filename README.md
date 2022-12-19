@@ -11,7 +11,7 @@ This program calculates the zero forcing number (and set) of any graph. The zero
 `sage --python3 setup.py build_ext --compiler-lang=3`
 
 ### Test:
-`sage --python3 -m unittest discover`
+`sage --python3 -m unittest discover [--failfast]`
 
 ### Clean:
 `sage --python3 setup.py clean`
