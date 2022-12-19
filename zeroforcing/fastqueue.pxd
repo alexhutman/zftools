@@ -3,6 +3,6 @@ cdef class FastQueueForBFS:
     cdef int smallest_nonempty_priority
     cdef int max_possible_priority
 
-    cdef pop(self)
+    cdef object pop(self)
     cdef tuple pop_and_get_priority(self)
-    cdef push(self, int, tuple)
+    cdef void push(self, int, object)

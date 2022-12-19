@@ -3,6 +3,9 @@ from sage.data_structures.bitset_base cimport bitset_t
 
 from fastqueue cimport FastQueueForBFS
 
+# Since we relabel the vertices from 0..N, this is fine :)
+cdef int SENTINEL = -1
+
 cdef class ZFSearchMetagraph:
     cdef public int num_vertices 
     cdef int num_vertices_checked, vertex_to_fill
@@ -22,7 +25,7 @@ cdef class ZFSearchMetagraph:
     cpdef get_num_closures_calculated(self)
 
     @staticmethod
-    cdef list shortest(FrozenBitset, list, dict, FrozenBitset)
+    cdef list shortest(FrozenBitset, FrozenBitset, list, dict)
 
     cdef set build_zf_set(self, list)
     cpdef set dijkstra(self, frozenset, frozenset)
