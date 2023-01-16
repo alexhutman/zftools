@@ -1,8 +1,7 @@
 cdef class FastQueueForBFS:
     def __init__(self, max_priority):
         self.array_list = []
-        self.smallest_nonempty_priority = 0
-        self.max_possible_priority = 0
+        self.length = 0
 
         for i in range(max_priority+1):
             self.array_list.append(list())
@@ -10,10 +9,7 @@ cdef class FastQueueForBFS:
         self.smallest_nonempty_priority = max_priority + 1
     
     def __len__(self):
-        cdef int total_length = 0
-        for i in range(self.max_possible_priority+1):
-            total_length += len(self.array_list[i])
-        return total_length
+        return self.length
     
     cdef object pop(self):
         cdef int _
@@ -33,10 +29,12 @@ cdef class FastQueueForBFS:
             if len(self.array_list[self.smallest_nonempty_priority]) != 0:
                 break
             self.smallest_nonempty_priority += 1
+        self.length -= 1
         return priority_to_return, item_to_return
 
     cdef void push(self, int priority_for_new_item, object new_item):
         self.array_list[priority_for_new_item].append(new_item)
+        self.length += 1
         
         if priority_for_new_item < self.smallest_nonempty_priority:
             self.smallest_nonempty_priority = priority_for_new_item
