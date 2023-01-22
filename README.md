@@ -7,11 +7,15 @@ This program calculates the zero forcing number (and set) of any graph. The zero
 ### Build:
 `sage --python3 setup.py build_ext`
 
-### Build using Cython compiler directive `language_level=3`:
-`sage --python3 setup.py build_ext --compiler-lang=3`
-
 ### Test:
-`sage --python3 -m unittest discover [--failfast]`
+`sage --python3 -m pytest [-x]`
+* `-x` flag makes pytest stop after the first failure
+* `-h` flag will show a section called `Zero forcing options:`
 
 ### Clean:
 `sage --python3 setup.py clean`
+
+### Help:
+`sage --python3 setup.py -h`
+(You can also use the `-h` flag in subcommands. i.e. `sage --python3 setup.py build_ext -h`
+

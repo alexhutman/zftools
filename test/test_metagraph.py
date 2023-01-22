@@ -1,7 +1,7 @@
-import unittest
-import sys
+import pytest
 
-from sage.all import *
+from contextlib import contextmanager
+from sage.all import graphs
 from zeroforcing.metagraph import ZFSearchMetagraph
 
 
@@ -31,41 +31,64 @@ GRAPHS_TO_TEST = [
         graphs.StarGraph(4),
         ]
 
-def force_zeroly(graph, relabelled_start_metavertex):
-    relabeled_graph = graph.relabel(inplace=False)
-    currently_filled = set(relabelled_start_metavertex)
+class DijkstraTest:
+    all_unfilled = frozenset()
+    def __init__(self, graph):
+        self.graph = graph
+        self.metagraph = ZFSearchMetagraph(graph)
+        self.all_filled = self.metagraph.to_relabeled_metavertex(graph.vertices(sort=False))
 
-    prev_length = -1
-    cur_length = len(currently_filled)
-    while cur_length != prev_length:
-        vertices_to_add = set()
-        for filled_vertex in currently_filled:
-            unfilled_neighbors = set(relabeled_graph.neighbors(filled_vertex)).difference(currently_filled)
-            if len(unfilled_neighbors) == 1:
-                vertices_to_add.add(unfilled_neighbors.pop())
-        currently_filled.update(vertices_to_add)
+    def force_zeroly(self, relabelled_start_metavertex):
+        relabeled_graph = self.graph.relabel(inplace=False)
+        currently_filled = set(relabelled_start_metavertex)
 
-        prev_length = cur_length
+        prev_length = -1
         cur_length = len(currently_filled)
+        while cur_length != prev_length:
+            vertices_to_add = set()
+            for filled_vertex in currently_filled:
+                unfilled_neighbors = set(relabeled_graph.neighbors(filled_vertex)).difference(currently_filled)
+                if len(unfilled_neighbors) == 1:
+                    vertices_to_add.add(unfilled_neighbors.pop())
+            currently_filled.update(vertices_to_add)
 
-    return currently_filled
+            prev_length = cur_length
+            cur_length = len(currently_filled)
 
+        return currently_filled
 
-class TestDijkstra(unittest.TestCase):
+@contextmanager
+def profiler_enabled(p):
+    # Stupid hack to be able to call `with` around a code block and only profile if it's enabled
+    # Setup
+    should_profile = p is not None
+    if should_profile:
+        p.enable()
+
+    yield 
+
+    # Teardown
+    if should_profile:
+        p.disable()
+
+@pytest.mark.parametrize("graph,testcase", [
+    pytest.param(
+        graph, DijkstraTest(graph), id=str(graph)
+    ) for graph in map(lambda g: g.copy(immutable=True), GRAPHS_TO_TEST)
+    ])
+def test_all_graphs(graph, testcase, profiler):
     # Doesn't test that it's the MINIMUM forcing set, but it at least tests that they are indeed forcing sets :)
-    def test_zero_forcing(self):
-        all_unfilled = frozenset()
-        for graph in GRAPHS_TO_TEST:
-            with self.subTest("Testing graph", graph=str(graph)):
-                metagraph = ZFSearchMetagraph(graph)
-                all_filled = metagraph.to_relabeled_metavertex(graph.vertices(sort=False))
 
-                zf_set = metagraph.dijkstra(all_unfilled, all_filled)
-                zf_set_relabeled = metagraph.to_relabeled_metavertex(zf_set)
+    with profiler_enabled(profiler):
+        zf_set = testcase.metagraph.dijkstra(testcase.all_unfilled, testcase.all_filled)
+    
+    zf_set_relabeled = testcase.metagraph.to_relabeled_metavertex(zf_set)
 
-                forced_to_completion = force_zeroly(graph, zf_set_relabeled)
-                self.assertEqual(forced_to_completion, all_filled)
+    forced_to_completion = testcase.force_zeroly(zf_set_relabeled)
+    assert forced_to_completion == testcase.all_filled
+
+def main():
+    pass
 
 if __name__ == "__main__":
-    runner = unittest.TextTestRunner(verbosity=2)
-    unittest.main(testRunner=runner)
+    main()
