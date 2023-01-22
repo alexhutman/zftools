@@ -23,7 +23,7 @@ def check_positive(value):
 
     raise err
 
-def add_default(help_str, default):
+def help_str_with_default(help_str, default):
     return f"{help_str} (default: {default})"
 
 def pytest_addoption(parser):
@@ -31,13 +31,13 @@ def pytest_addoption(parser):
     profile_group.addoption(
             _SHOULD_PROFILE_FLAG,
             action="store_true",
-            help=add_default("Whether to profile the tests or not. Not too helpful unless you compile in debug mode.", False)
+            help=help_str_with_default("Whether to profile the tests or not. Not too helpful unless you compile in debug mode.", False)
             )
     # Pytest uses their own version of options, don't think they support subparsers
     profile_group.addoption(
             _NUM_RESULTS_FLAG,
             type=check_positive,
-            help=add_default("Number of profiler results to return.", _DEFAULT_NUM_RESULTS),
+            help=help_str_with_default("Number of profiler results to return.", _DEFAULT_NUM_RESULTS),
             default=_DEFAULT_NUM_RESULTS
             )
 
@@ -83,17 +83,6 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
         terminalreporter.ensure_newline()
         terminalreporter.section(_PROFILER_RESULTS_SECTION, blue=True, bold=True)
         terminalreporter.write_line(content + os.linesep)
-
-"""
-# What happens if not called from a tty? 🤷
-def format_like_pytest(string, sep='='):
-    term_width, _ = os.get_terminal_size()
-    spaced = string.center(len(string)+2) # Add a space on both sides
-    return spaced.center(term_width, sep)
-
-def print_like_pytest(string, sep='='):
-    print(format_like_pytest(string, sep=sep))
-"""
 
 @pytest.fixture(scope="session")
 def profiler(request):
