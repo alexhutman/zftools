@@ -9,24 +9,78 @@ import textwrap
 from distutils.command.clean import clean
 from distutils.core import setup
 from distutils.extension import Extension
+from enum import Enum
 from pathlib import Path
 
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 
 
-_BUILD_EXT_CMD = "build_ext"
-_CLEAN_CMD = "clean"
-_extension_modules = [
-        Extension(
-            'zeroforcing.fastqueue',
-            sources=['zeroforcing/fastqueue.pyx']
-        ),
-        Extension(
-            'zeroforcing.metagraph',
-            sources=['zeroforcing/metagraph.pyx']
-        )
-]
+class ZeroForcingFormatter(
+        argparse.ArgumentDefaultsHelpFormatter,
+        argparse.RawTextHelpFormatter):
+    def _get_help_string(self, action): # Adapted from https://stackoverflow.com/a/34558278
+        help_str = action.help
+        defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
+
+        default_str_present = '%(default)' in action.help
+        is_suppress_action = action.default is argparse.SUPPRESS
+        not_sure_about_this_one = action.option_strings or action.nargs in defaulting_nargs
+        conditions = [
+                not default_str_present,
+                not is_suppress_action,
+                not_sure_about_this_one
+                ]
+        if all(conditions):
+            help_str += ' (default: %(default)s)'
+        return help_str
+
+class ZeroForcingArgument:
+    def __init__(self, *args, **kwargs):
+        self._parser = kwargs.get("parser", None)
+
+        self.args = args
+        self.kwargs = kwargs
+        self.cmdclass = self.kwargs.pop("cmdclass", None)
+
+        if len(args) > 0:
+            self.title = args[0]
+
+    @property
+    def _is_parser_set(self):
+        return self._parser is not None
+
+    @property
+    def parser(self):
+        if not self._is_parser_set:
+            raise ValueError("Parser has not been set")
+        return self._parser
+
+    @parser.setter
+    def parser(self, p):
+        if self._is_parser_set:
+            raise ValueError("Parser already set")
+        self._parser = p
+
+    def apply_func(self, func):
+        return func(*(self.args), **(self.kwargs))
+
+    def add_subparsers(self, parent):
+        return self.apply_func(parent.add_subparsers)
+
+    def add_parser(self, parent):
+        return self.apply_func(parent.add_parser)
+
+    def add_argument(self, parser):
+        return self.apply_func(parser.add_argument)
+
+
+class InstallZeroForcing(build_ext):
+    # Normal build_ext + forces the "--inplace" flag
+    def initialize_options(self, *args, **kwargs):
+        super().initialize_options(*args, **kwargs)
+        self.inplace = True
+
 
 class CleanZeroForcing(clean):
     # Normal clean + forces the "--all" flag + cleans build extensions
@@ -127,25 +181,87 @@ class CleanZeroForcing(clean):
     def __notify_path_removal_err(path):
         print(f"could not remove '{path}'", file=sys.stderr)
 
+def _get_sage_root():
+    sage_root = os.getenv("SAGE_ROOT")
+    if sage_root is not None:
+        sage_root = Path(sage_root).resolve() / "sage"
+    return sage_root
 
-class InstallZeroForcing(build_ext):
-    # Normal build_ext + forces the "--inplace" flag
-    def initialize_options(self, *args, **kwargs):
-        super().initialize_options(*args, **kwargs)
-        self.inplace = True
+def _get_prog_name():
+    sage_root = _get_sage_root()
+    executable = '[path_to_sage_executable]' if sage_root is None else sage_root
+    setup_file_path = Path(__file__).name
+    return f"{executable} {setup_file_path}"
 
+
+class ZeroForcingArguments(Enum):
+    ROOT = ZeroForcingArgument(
+            prog=_get_prog_name()
+            )
+    SUBCOMMANDS = ZeroForcingArgument(
+            title="subcommands",
+            help='valid subcommands',
+            dest="subcommand",
+            required=True
+            )
+    BUILD_EXT = ZeroForcingArgument(
+            "build_ext",
+            cmdclass=InstallZeroForcing,
+            help='build the Zero Forcing code',
+            formatter_class=ZeroForcingFormatter
+            )
+    DEBUG = ZeroForcingArgument(
+            "--debug",
+            action='store_true',
+            help="whether or not to compile in debug mode, which allows for profiling and line tracing."
+            )
+    COMPILER_LANG = ZeroForcingArgument(
+            "--compiler-lang",
+            default="2",
+            choices=["2", "3"],
+            help=textwrap.dedent(
+                """\
+                the version to use for the Cython compiler's \"language_level\" directive. (default: %(default)s)
+                - https://cython.readthedocs.io/en/latest/src/userguide/source_files_and_compilation.html#compiler-directives
+                """)
+            )
+    CLEAN = ZeroForcingArgument(
+            "clean",
+            cmdclass=CleanZeroForcing,
+            help='clean your workspace of all build artifacts',
+            formatter_class=ZeroForcingFormatter
+            )
+
+_extension_modules = [
+        Extension(
+            'zeroforcing.fastqueue',
+            sources=['zeroforcing/fastqueue.pyx']
+        ),
+        Extension(
+            'zeroforcing.metagraph',
+            sources=['zeroforcing/metagraph.pyx']
+        )
+]
+
+def get_enum_val(e):
+    return e.value
+
+def get_enum_vals(it):
+    return map(get_enum_val, it)
 
 def _get_setup_parameters(extensions, zf_args, setup_args):
+    commands = [ZeroForcingArguments.BUILD_EXT, ZeroForcingArguments.CLEAN]
     setup_params = {
             "name": "zeroforcing",
             "packages": [ext.name for ext in extensions],
             "cmdclass": {
-                _BUILD_EXT_CMD: InstallZeroForcing,
-                _CLEAN_CMD: CleanZeroForcing
-                },
+                cmd.title: cmd.cmdclass
+                for cmd in get_enum_vals(commands)
+                if cmd.cmdclass is not None
+                }
             }
 
-    if zf_args.subcommand == _BUILD_EXT_CMD:
+    if zf_args.subcommand == get_enum_val(ZeroForcingArguments.BUILD_EXT).title:
         comp_directives = {
             "language_level": zf_args.compiler_lang
         }
@@ -168,77 +284,23 @@ def _get_setup_parameters(extensions, zf_args, setup_args):
         })
     return setup_params
 
-def add_zero_forcing_parser(subparser):
-    def inner(*args, **kwargs):
-        updated_kwargs = {
-            **kwargs,
-            "formatter_class": ZeroForcingFormatter
-            }
-        return subparser.add_parser(*args, **updated_kwargs)
-    return inner
-
 def _get_cmd_args():
-    # TODO: Probably not make current directory the default sage root
-    sage_root = os.getenv("SAGE_ROOT")
-    if sage_root:
-        sage_root = Path(sage_root).resolve() / "sage"
+    root = get_enum_val(ZeroForcingArguments.ROOT)
+    subcommands = get_enum_val(ZeroForcingArguments.SUBCOMMANDS)
+    build_ext = get_enum_val(ZeroForcingArguments.BUILD_EXT)
+    debug = get_enum_val(ZeroForcingArguments.DEBUG)
+    compiler_lang = get_enum_val(ZeroForcingArguments.COMPILER_LANG)
+    clean = get_enum_val(ZeroForcingArguments.CLEAN)
+    
+    # Probably not the cleanest/best way to do this but 🤷
+    root.parser = root.apply_func(argparse.ArgumentParser)
+    subcommands.parser = subcommands.add_subparsers(root.parser)
+    build_ext.parser = build_ext.add_parser(subcommands.parser)
+    debug.add_argument(build_ext.parser)
+    compiler_lang.add_argument(build_ext.parser)
+    clean.parser = clean.add_parser(subcommands.parser)
 
-    setup_file_path = Path(__file__).name
-    parser = argparse.ArgumentParser(
-            prog=f"{sage_root if sage_root is not None else '[path_to_sage_executable]'} {setup_file_path}",
-            formatter_class=ZeroForcingFormatter
-            )
-    subparser = parser.add_subparsers(title="subcommands",
-                                      help='valid subcommands',
-                                      dest="subcommand",
-                                      required=True)
-    zf_subparser_add = add_zero_forcing_parser(subparser)
-
-    build_ext_subparser = zf_subparser_add(
-            _BUILD_EXT_CMD,
-            help='build the Zero Forcing code',
-            )
-    clean_subparser = zf_subparser_add(
-            _CLEAN_CMD,
-            help='clean your workspace of all build artifacts',
-            )
-    build_ext_subparser.add_argument(
-            '--debug',
-            action='store_true',
-            help="whether or not to compile in debug mode, which allows for profiling and line tracing."
-            )
-
-    build_ext_subparser.add_argument(
-            "--compiler-lang",
-            default="2",
-            choices=["2", "3"],
-            help=textwrap.dedent(
-                """\
-                the version to use for the Cython compiler's \"language_level\" directive. (default: %(default)s)
-                - https://cython.readthedocs.io/en/latest/src/userguide/source_files_and_compilation.html#compiler-directives
-                """)
-            )
-
-    return parser.parse_known_args()
-
-class ZeroForcingFormatter(
-        argparse.ArgumentDefaultsHelpFormatter,
-        argparse.RawTextHelpFormatter):
-    def _get_help_string(self, action): # Adapted from https://stackoverflow.com/a/34558278
-        help_str = action.help
-        defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
-
-        default_str_present = '%(default)' in action.help
-        is_suppress_action = action.default is argparse.SUPPRESS
-        not_sure_about_this_one = action.option_strings or action.nargs in defaulting_nargs
-        conditions = [
-                not default_str_present,
-                not is_suppress_action,
-                not_sure_about_this_one
-                ]
-        if all(conditions):
-            help_str += ' (default: %(default)s)'
-        return help_str
+    return root.parser.parse_known_args()
 
 def main():
     zero_forcing_args, setup_args = _get_cmd_args()
