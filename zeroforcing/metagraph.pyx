@@ -64,7 +64,7 @@ cdef class ZFSearchMetagraph:
         return frozenset(self.__to_relabeled_metavertex_iter(orig_vertex_iter))
 
     def __init__(self, graph_for_zero_forcing):
-        graph_copy = graph_for_zero_forcing.copy()
+        graph_copy = graph_for_zero_forcing.copy(immutable=False)
         self.orig_to_relabeled_verts = graph_copy.relabel(inplace=True, return_map=True)
         self.relabeled_to_orig_verts = {v: k for k,v in self.orig_to_relabeled_verts.items()}
         

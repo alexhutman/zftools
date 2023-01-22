@@ -1,26 +1,22 @@
 import argparse
 import glob
-import io
 import itertools
 import os
-import re
 import shutil
 import sys
 import textwrap
 
-from contextlib import redirect_stdout, redirect_stderr
 from distutils.command.clean import clean
 from distutils.core import setup
 from distutils.extension import Extension
-from functools import reduce
 from pathlib import Path
 
-
 from Cython.Build import cythonize
-from Cython.Compiler.Errors import CompileError
 from Cython.Distutils import build_ext
 
 
+_BUILD_EXT_CMD = "build_ext"
+_CLEAN_CMD = "clean"
 _extension_modules = [
         Extension(
             'zeroforcing.fastqueue',
@@ -111,15 +107,13 @@ class CleanZeroForcing(clean):
 
     @staticmethod
     def __clean_artifacts():
-        # We're removing files from the filesystem, so it's better to be careful :)
+        # TODO: Gather the list first, then ask if user wants to delete, add a -y flag ('store_true') to auto say yes, only THEN delete
         all_ext_src_paths = (Path(source) for ext in _extension_modules for source in ext.sources) # TODO: get these recursively in case Extensions are nested (if even possible?)
         artifact_exts = [".c", ".*.so"]
         all_artifact_paths = CleanZeroForcing.__get_artifact_globs_gen(all_ext_src_paths, artifact_exts)
 
         pycache_dir_name = "__pycache__"
-        pycache_subdirs = ["", "**"] # Extension module directory and all subdirectories
-        all_pycache_path_globs = {(Path(ext.name.split('.')[0]) / Path(subdir) / pycache_dir_name) for ext in _extension_modules for subdir in pycache_subdirs}
-        all_pycache_path_globs.add(Path("test") / pycache_dir_name)
+        all_pycache_path_globs = {Path("**") / pycache_dir_name}
 
         all_paths_to_remove = itertools.chain(all_pycache_path_globs, all_artifact_paths)
         for path_to_remove in map(Path, all_paths_to_remove):
@@ -146,70 +140,109 @@ def _get_setup_parameters(extensions, zf_args, setup_args):
             "name": "zeroforcing",
             "packages": [ext.name for ext in extensions],
             "cmdclass": {
-                "build_ext": InstallZeroForcing,
-                "clean": CleanZeroForcing
+                _BUILD_EXT_CMD: InstallZeroForcing,
+                _CLEAN_CMD: CleanZeroForcing
                 },
             }
 
-    if "build_ext" in setup_args: # Only Cythonize if we're calling build_ext
+    if zf_args.subcommand == _BUILD_EXT_CMD:
+        comp_directives = {
+            "language_level": zf_args.compiler_lang
+        }
+
+        if zf_args.debug:
+            print(f"Compiling in debug mode")
+            comp_directives.update({
+                    "profile": True,
+                    "linetrace": True
+                })
+            for ext in extensions:
+                ext.define_macros = [("CYTHON_TRACE", 1)]
+
+        # Only Cythonize if we're calling build_ext
         setup_params.update({
             "ext_modules": cythonize(
                 extensions,
-                compiler_directives={
-                    "language_level": zf_args.compiler_lang
-                }
+                compiler_directives=comp_directives
             )
         })
     return setup_params
 
+def add_zero_forcing_parser(subparser):
+    def inner(*args, **kwargs):
+        updated_kwargs = {
+            **kwargs,
+            "formatter_class": ZeroForcingFormatter
+            }
+        return subparser.add_parser(*args, **updated_kwargs)
+    return inner
+
 def _get_cmd_args():
-    sage_root = Path(os.getenv("SAGE_ROOT", default=".")).resolve()
+    # TODO: Probably not make current directory the default sage root
+    sage_root = os.getenv("SAGE_ROOT")
+    if sage_root:
+        sage_root = Path(sage_root).resolve() / "sage"
+
     setup_file_path = Path(__file__).name
     parser = argparse.ArgumentParser(
-            prog=f"{sage_root if sage_root.exists() else '[path_to_sage_executable]'} {setup_file_path}",
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter
+            prog=f"{sage_root if sage_root is not None else '[path_to_sage_executable]'} {setup_file_path}",
+            formatter_class=ZeroForcingFormatter
+            )
+    subparser = parser.add_subparsers(title="subcommands",
+                                      help='valid subcommands',
+                                      dest="subcommand",
+                                      required=True)
+    zf_subparser_add = add_zero_forcing_parser(subparser)
+
+    build_ext_subparser = zf_subparser_add(
+            _BUILD_EXT_CMD,
+            help='build the Zero Forcing code',
+            )
+    clean_subparser = zf_subparser_add(
+            _CLEAN_CMD,
+            help='clean your workspace of all build artifacts',
+            )
+    build_ext_subparser.add_argument(
+            '--debug',
+            action='store_true',
+            help="whether or not to compile in debug mode, which allows for profiling and line tracing."
             )
 
-    parser.add_argument(
+    build_ext_subparser.add_argument(
             "--compiler-lang",
             default="2",
             choices=["2", "3"],
-            help="The version to use for the Cython compiler's \"language_level\" directive.")
+            help=textwrap.dedent(
+                """\
+                the version to use for the Cython compiler's \"language_level\" directive. (default: %(default)s)
+                - https://cython.readthedocs.io/en/latest/src/userguide/source_files_and_compilation.html#compiler-directives
+                """)
+            )
 
     return parser.parse_known_args()
 
-def _run_setup(zf_args, setup_args):
-    compile_err = None
+class ZeroForcingFormatter(
+        argparse.ArgumentDefaultsHelpFormatter,
+        argparse.RawTextHelpFormatter):
+    def _get_help_string(self, action): # Adapted from https://stackoverflow.com/a/34558278
+        help_str = action.help
+        defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
 
-    with redirect_stderr(io.StringIO()) as new_stderr:
-        try:
-            setup(**_get_setup_parameters(_extension_modules, zf_args, setup_args))
-        except CompileError as err:
-            # CompileError doesn't actually contain the error that setup prints to stdout,
-            # so have to do the below stderr filter mess :D
-            compile_err = err
-
-    # Can't seem to loop through output line by line as it prints -- doing it after
-    stderr_output = new_stderr.getvalue()
-    print(stderr_output, file=sys.stderr) # Re-print stderr since we intercepted it
-    _detect_bitset_err(stderr_output, zf_args.compiler_lang)
-
-    if compile_err is not None:
-        raise compile_err
-
-def _detect_bitset_err(stderr_output, compiler_lang):
-    bitset_err_regex = re.compile(r"bitset_base\.pxd.*Cannot assign type")
-    using_python_three_directive = (compiler_lang == '3')
-    if using_python_three_directive and bool(bitset_err_regex.search(stderr_output)):
-        addendum = textwrap.dedent("""
-            This is because that Sage bitset module uses / for integer division in accordance with Python2, which represents float division in Python3.
-            The divisions will hopefully be fixed to use // in a future version of Sage.
-            Not sure how much of a benefit (if at all) the compiler directive provides but I'm including it in case :)""")
-        print(addendum, file=sys.stderr)
+        default_str_present = '%(default)' in action.help
+        is_suppress_action = action.default is argparse.SUPPRESS
+        not_sure_about_this_one = action.option_strings or action.nargs in defaulting_nargs
+        conditions = [
+                not default_str_present,
+                not is_suppress_action,
+                not_sure_about_this_one
+                ]
+        if all(conditions):
+            help_str += ' (default: %(default)s)'
+        return help_str
 
 def main():
     zero_forcing_args, setup_args = _get_cmd_args()
-    _run_setup(zero_forcing_args, setup_args)
+    setup(**_get_setup_parameters(_extension_modules, zero_forcing_args, setup_args))
 
 if __name__ == "__main__":
     main()
