@@ -197,8 +197,8 @@ cdef class ZFSearchMetagraph:
         cdef FrozenBitset filled_vertices
         cdef int forcing_vx 
 
-        for metavertex in final_metavx_list[:-1]: #Do not need to do the last metavertex (everything is already filled)
-            filled_vertices, forcing_vx = metavertex
+        # For each metavertex
+        for filled_vertices, forcing_vx in final_metavx_list[:-1]: #Do not need to do the last metavertex (everything is already filled)
             if forcing_vx not in filled_vertices: #If filled, don't need to add it to zf_set since it will already have been gotten for free
                 zf_set.add(forcing_vx)
             unfilled_neighbors = self.neighbors_dict[forcing_vx] - filled_vertices #Find n unfilled neighbors of forcing vertex
