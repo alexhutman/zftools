@@ -1,40 +1,43 @@
+# Disabling bounds checking in this class sounds like it would be perfect here(?)
 cdef class FastQueueForBFS:
     def __init__(self, max_priority):
-        self.array_list = []
+        self.max_possible_priority = max_priority
+        self.smallest_nonempty_priority = UINT_MAX
+        
         self.length = 0
+        self.array_list = list()
 
         for i in range(max_priority+1):
             self.array_list.append(list())
-        self.max_possible_priority = max_priority
-        self.smallest_nonempty_priority = max_priority + 1
-    
+
     def __len__(self):
         return self.length
-    
+
+    cdef void push(self, unsigned int priority_for_new_item, object new_item):
+        # Check for negative here?
+        # raise ValueError if priority_for_new_item > self.max_possible_priority?
+            # Not checking makes it faster though :)
+
+        self.array_list[priority_for_new_item].append(new_item)
+        self.length += 1
+        
+        self.smallest_nonempty_priority = min(priority_for_new_item, self.smallest_nonempty_priority)
+
     cdef object pop(self):
-        cdef int _
+        cdef unsigned int _
         cdef object popped
 
         _, popped = self.pop_and_get_priority()
         return popped
-    
+
     cdef tuple pop_and_get_priority(self):
-        if self.smallest_nonempty_priority > self.max_possible_priority:
-            return None
-
-        cdef object item_to_return = self.array_list[self.smallest_nonempty_priority].pop()
-        cdef int priority_to_return = self.smallest_nonempty_priority
-        
-        while self.smallest_nonempty_priority <= self.max_possible_priority:
-            if len(self.array_list[self.smallest_nonempty_priority]) != 0:
-                break
-            self.smallest_nonempty_priority += 1
+        # Store vals to return
+        cdef unsigned int priority_to_return = self.smallest_nonempty_priority
+        cdef object item_to_return = self.array_list[priority_to_return].pop()
         self.length -= 1
-        return priority_to_return, item_to_return
 
-    cdef void push(self, int priority_for_new_item, object new_item):
-        self.array_list[priority_for_new_item].append(new_item)
-        self.length += 1
-        
-        if priority_for_new_item < self.smallest_nonempty_priority:
-            self.smallest_nonempty_priority = priority_for_new_item
+        # Find new smallest priority
+        while len(self.array_list[self.smallest_nonempty_priority]) == 0 \
+        and self.smallest_nonempty_priority < self.max_possible_priority:
+            self.smallest_nonempty_priority += 1
+        return priority_to_return, item_to_return
