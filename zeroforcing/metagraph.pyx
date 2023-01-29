@@ -45,6 +45,7 @@ cdef class ZFSearchMetagraph:
         bitset_init(self.filled_neighbors_of_vx_to_fill, self.num_vertices)
         bitset_init(self.meta_vertex, self.num_vertices)
     
+    # TODO: Get rid of this crap, only have user call in terms of original vertices
     cpdef object to_orig_vertex(self, int relabeled_vertex):
         return self.relabeled_to_orig_verts[relabeled_vertex]
 

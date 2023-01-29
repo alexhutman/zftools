@@ -1,8 +1,12 @@
+# This is not our code! I am not sure of the best way to go about including it for testing yet (it would be nice if it was in Sage)
+# To my understanding, it looks like the license allows us to include it :D
+# https://github.com/jephianlin/mr_JG/blob/master/zero_forcing_wavefront.pyx
+
 ### stdsage.pxi deprecated
 #include "sage/ext/stdsage.pxi" 
 #directly include the content intead
 ### Partial contents of stdsage.pxi start here ###
-include "cysignals/memory.pxi"
+cimport cysignals.memory
 
 from cysignals.memory cimport sig_malloc as sage_malloc
 from cysignals.memory cimport sig_realloc as sage_realloc
@@ -14,7 +18,7 @@ from cysignals.memory cimport sig_free as sage_free
 ### seems nothing happend if not including it
 #include 'sage/ext/cdefs.pxi'
 #include 'sage/ext/interrupt.pxi'
-include 'cysignals/signals.pxi'
+cimport cysignals.signals
 
 """
 Fast computation of zero forcing sets
@@ -47,7 +51,8 @@ TODO: Make a wavefront function for looped vertices:
 
 #include "sage/misc/bitset.pxi"
 #from sage.misc.bitset cimport FrozenBitset, Bitset
-include "sage/data_structures/bitset.pxi"
+#include "sage/data_structures/bitset.pxi"
+from sage.data_structures.bitset_base cimport *
 from sage.data_structures.bitset cimport FrozenBitset, Bitset 
 
 cdef update_wavefront(bitset_s *neighbors,bitset_s *unfilled):
@@ -135,8 +140,7 @@ def zero_forcing_set_wavefront(matrix):
     cdef FrozenBitset closure_to_add_unfilled_Bitset, unfilled_Bitset
 
     cdef int cost
-    
-    cdef int num_closures_considered = 0    
+    cdef int num_closures_considered = 0
     cdef int num_closures_REALLY_calculated = 0
 
     cdef int minimum_degree = min([len(matrix.nonzero_positions_in_row(i)) for i in range(num_vertices)])
@@ -163,7 +167,7 @@ def zero_forcing_set_wavefront(matrix):
     # We have to fill at least one vertex to start, so budget >= 1
     for budget in range(minimum_degree,num_vertices+1):
         #print "current budget: ", budget, " Current closures: ", len(closures)
-        for unfilled_Bitset, initial_Bitset in closures.items():
+        for unfilled_Bitset, initial_Bitset in list(closures.items()):
             initial_set = &initial_Bitset._bitset[0]
             unfilled_set = &unfilled_Bitset._bitset[0]
             can_afford = budget - bitset_len(initial_set)
@@ -192,7 +196,7 @@ def zero_forcing_set_wavefront(matrix):
                     if cost==0:
                         #print "vertex %d is zero-cost; skipping"%n
                         continue
-                
+
                 num_closures_considered += 1
                 if(cost<=can_afford):
                     #print "  We can afford to add vertex ", n
@@ -240,7 +244,7 @@ def zero_forcing_set_wavefront(matrix):
                         sage_free(neighbors_set)
 
                         bitset_free(unfilled_neighbors)
-                        return len(zero_forcing_vertices), zero_forcing_vertices, num_closures_considered, num_closures_REALLY_calculated #len(closures)
+                        return len(zero_forcing_vertices), zero_forcing_vertices, num_closures_considered, num_closures_REALLY_calculated
 
                     if closure_to_add_unfilled_Bitset not in closures:
                         closures[closure_to_add_unfilled_Bitset] = closure_to_add_initial_Bitset
