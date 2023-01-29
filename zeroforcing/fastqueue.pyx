@@ -29,8 +29,11 @@ cdef class FastQueueForBFS:
 
     cdef tuple pop_and_get_priority(self):
         # Store vals to return
-        cdef unsigned int priority_to_return = heapq.heappop(self.heapqueue)
+        cdef unsigned int priority_to_return = self.heapqueue[0]
         cdef object item_to_return = self.heapqueue_elements[priority_to_return].pop()
         self.length -= 1
+
+        if len(self.heapqueue_elements[priority_to_return]) == 0:
+            heapq.heappop(self.heapqueue)
 
         return priority_to_return, item_to_return
