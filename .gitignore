@@ -2,5 +2,5 @@
 build/
 .ipynb_checkpoints/
 **/.ipynb_checkpoints/
-zeroforcing/*.c
-zeroforcing/*.so
+**/*.c
+**/*.so
