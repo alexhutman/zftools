@@ -123,6 +123,7 @@ class CleanZeroForcing(clean):
             __notify_path_removal_err(dir_path_to_remove)
             raise err
 
+    # TODO: Make print_globs_only a clean cmd option?
     @staticmethod
     def __delete_file_or_dir(path_to_remove, print_globs_only=True):
         resolved_glob_paths_gen = glob.iglob(str(path_to_remove), recursive=True)
@@ -240,6 +241,11 @@ _extension_modules = [
         Extension(
             'zeroforcing.metagraph',
             sources=['zeroforcing/metagraph.pyx']
+        ),
+        # TODO: Add flag whether or not to compile this
+        Extension(
+            'test.wavefront',
+            sources=['test/wavefront.pyx']
         )
 ]
 
