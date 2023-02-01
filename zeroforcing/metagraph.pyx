@@ -88,9 +88,6 @@ cdef class ZFSearchMetagraph:
             for w in graph_copy.neighbor_iterator(v):
                 bitset_add(self.neighborhood_array[v], w)   
         
-        #The variable below is just for profiling purposes!
-        self.num_vertices_checked = 0
-        
     def __dealloc__(self):
         sig_free(self.neighborhood_array) #DEALLOCATE NEIGHBORHOOD_ARRAY
         
@@ -141,8 +138,6 @@ cdef class ZFSearchMetagraph:
                         bitset_add(self.filled_set, self.vertex_to_fill)
             bitset_copy(self.vertices_to_check, self.vertices_to_recheck)
 
-        self.num_vertices_checked += 1            
-        
         set_to_return = FrozenBitset(capacity=self.num_vertices)
         bitset_copy(&set_to_return._bitset[0], self.filled_set)
         return set_to_return
@@ -174,10 +169,6 @@ cdef class ZFSearchMetagraph:
 
             if cost > 0:
                 queue.push(previous_cost + cost, (meta_vertex, new_vx_to_make_force))
-
-    
-    cpdef get_num_closures_calculated(self):
-        return int(self.num_vertices_checked)
 
     @staticmethod
     cdef list shortest(FrozenBitset start, FrozenBitset end, list path_so_far, dict predecessor_list):

@@ -22,7 +22,6 @@ cdef class ZFSearchMetagraph:
         
     cdef FrozenBitset extend_closure(self, FrozenBitset, FrozenBitset)
     cdef neighbors_with_edges_add_to_queue(self, FrozenBitset, FastQueueForBFS, int)
-    cpdef get_num_closures_calculated(self)
 
     @staticmethod
     cdef list shortest(FrozenBitset, FrozenBitset, list, dict)
