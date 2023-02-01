@@ -35,7 +35,6 @@ cdef class ZFSearchMetagraph:
         self.num_vertices = graph_for_zero_forcing.num_verts()
         self.neighborhood_array = <bitset_t*> sig_malloc(self.num_vertices*sizeof(bitset_t)) #ALLOCATE NEIGHBORHOOD_ARRAY
         
-        
         # Initialize/clear extend_closure bitsets
         bitset_init(self.filled_set, self.num_vertices)
         bitset_init(self.vertices_to_check, self.num_vertices)
@@ -44,7 +43,7 @@ cdef class ZFSearchMetagraph:
         bitset_init(self.unfilled_neighbors, self.num_vertices)
         bitset_init(self.filled_neighbors_of_vx_to_fill, self.num_vertices)
         bitset_init(self.meta_vertex, self.num_vertices)
-    
+
     # TODO: Get rid of this crap, only have user call in terms of original vertices
     cpdef object to_orig_vertex(self, int relabeled_vertex):
         return self.relabeled_to_orig_verts[relabeled_vertex]
@@ -73,21 +72,9 @@ cdef class ZFSearchMetagraph:
         
         self.neighbors_dict = {}
         self.closed_neighborhood_list = {}
+        self.initialize_neighbors(graph_copy)
+        self.initialize_neighborhood_array(graph_copy)
 
-        for i in self.vertices_set:
-            #TODO: Only so Dijkstra code doesn't break. Ideally want to remove this somehow
-            neighbors = graph_copy.neighbors(i)
-            self.neighbors_dict[i] = FrozenBitset(neighbors)
-            self.closed_neighborhood_list[i] = FrozenBitset(neighbors + [i])
-        
-        cdef int v, w
-        # create pointer to bitset array with neighborhoods
-        for v in range(self.num_vertices):
-            bitset_init(self.neighborhood_array[v], self.num_vertices)
-            bitset_clear(self.neighborhood_array[v])
-            for w in graph_copy.neighbor_iterator(v):
-                bitset_add(self.neighborhood_array[v], w)   
-        
     def __dealloc__(self):
         sig_free(self.neighborhood_array) #DEALLOCATE NEIGHBORHOOD_ARRAY
         
@@ -98,6 +85,23 @@ cdef class ZFSearchMetagraph:
         bitset_free(self.unfilled_neighbors)
         bitset_free(self.filled_neighbors_of_vx_to_fill)
         bitset_free(self.meta_vertex)
+
+    cdef void initialize_neighbors(self, graph_copy):
+        cdef int i
+        for i in self.vertices_set:
+            #TODO: Only so Dijkstra code doesn't break. Ideally want to remove this somehow
+            neighbors = graph_copy.neighbors(i)
+            self.neighbors_dict[i] = FrozenBitset(neighbors)
+            self.closed_neighborhood_list[i] = FrozenBitset(neighbors + [i])
+
+    def initialize_neighborhood_array(self, graph_copy):
+        cdef int vertex, neighbor
+        # create pointer to bitset array with neighborhoods
+        for vertex in range(self.num_vertices):
+            bitset_init(self.neighborhood_array[vertex], self.num_vertices)
+            bitset_clear(self.neighborhood_array[vertex])
+            for neighbor in graph_copy.neighbor_iterator(vertex):
+                bitset_add(self.neighborhood_array[vertex], neighbor)
 
     cdef FrozenBitset extend_closure(self, FrozenBitset initially_filled_subset2, FrozenBitset vxs_to_add2):
         cdef bitset_t initially_filled_subset
