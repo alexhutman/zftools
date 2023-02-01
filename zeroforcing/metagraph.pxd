@@ -19,6 +19,8 @@ cdef class ZFSearchMetagraph:
     # Initialize calculate_cost variables 
     cdef bitset_t meta_vertex
     cdef int numUnfilledNeighbors, accounter, cost
+
+    cdef void initialize_neighbors(self, object)
         
     cdef FrozenBitset extend_closure(self, FrozenBitset, FrozenBitset)
     cdef neighbors_with_edges_add_to_queue(self, FrozenBitset, FastQueueForBFS, int)
