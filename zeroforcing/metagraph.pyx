@@ -159,10 +159,9 @@ cdef class ZFSearchMetagraph:
             bitset_difference(self.unfilled_neighbors, self.unfilled_neighbors, self.meta_vertex)
             num_unfilled_neighbors = bitset_len(self.unfilled_neighbors)
 
-            if num_unfilled_neighbors == 0:
-                cost = num_unfilled_neighbors
-            else:
-                cost = num_unfilled_neighbors - 1
+            cost = num_unfilled_neighbors
+            if num_unfilled_neighbors > 0:
+                cost -= 1
 
             if not bitset_in(self.meta_vertex, new_vx_to_make_force):
                 cost += 1
