@@ -213,12 +213,11 @@ cdef class ZFSearchMetagraph:
         cdef int vx_to_force
 
         cdef dict previous = {}
-        cdef int num_vertices_primal_graph = self.num_vertices
         cdef FrozenBitset empty_FrozenBitset = FrozenBitset()
-        cdef FastQueueForBFS unvisited_queue = FastQueueForBFS(num_vertices_primal_graph)
+        cdef FastQueueForBFS unvisited_queue = FastQueueForBFS(self.num_vertices)
         
-        cdef FrozenBitset start_FrozenBitset = FrozenBitset(start, capacity=num_vertices_primal_graph)
-        cdef FrozenBitset target_FrozenBitset = FrozenBitset(target, capacity=num_vertices_primal_graph)
+        cdef FrozenBitset start_FrozenBitset = FrozenBitset(start, capacity=self.num_vertices)
+        cdef FrozenBitset target_FrozenBitset = FrozenBitset(target, capacity=self.num_vertices)
         
         unvisited_queue.push(0, (start_FrozenBitset, SENTINEL))
         while True:
