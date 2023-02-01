@@ -79,8 +79,6 @@ def profiler_enabled(p):
     ) for graph in map(lambda g: g.copy(immutable=True), GRAPHS_TO_TEST)
     ])
 def test_all_graphs(graph, testcase, profiler):
-    # Doesn't test that it's the MINIMUM forcing set, but it at least tests that they are indeed forcing sets :)
-
     with profiler_enabled(profiler):
         zf_set = testcase.metagraph.dijkstra(testcase.all_unfilled, testcase.all_filled)
     
