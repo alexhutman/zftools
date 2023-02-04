@@ -31,6 +31,8 @@ from fastqueue cimport FastQueueForBFS
 
 
 cdef class ZFSearchMetagraph:
+    __slots__ = ("num_vertices", "vertex_to_fill", "neighbors_dict", "closed_neighborhood_list", "orig_to_relabeled_verts", "relabeled_to_orig_verts", "vertices_set")
+
     def __cinit__(self, graph_for_zero_forcing):
         self.num_vertices = graph_for_zero_forcing.num_verts()
         self.neighborhood_array = <bitset_t*> sig_malloc(self.num_vertices*sizeof(bitset_t)) #ALLOCATE NEIGHBORHOOD_ARRAY
@@ -45,7 +47,7 @@ cdef class ZFSearchMetagraph:
         bitset_init(self.meta_vertex, self.num_vertices)
 
     # TODO: Get rid of this crap, only have user call in terms of original vertices
-    cpdef object to_orig_vertex(self, int relabeled_vertex):
+    cpdef object to_orig_vertex(self, unsigned int relabeled_vertex):
         return self.relabeled_to_orig_verts[relabeled_vertex]
 
     cpdef object __to_orig_metavertex_iter(self, object relabeled_metavertex_iter):
@@ -54,7 +56,7 @@ cdef class ZFSearchMetagraph:
     cpdef frozenset to_orig_metavertex(self, object relabeled_metavertex_iter):
         return frozenset(self.__to_orig_metavertex_iter(relabeled_metavertex_iter))
 
-    cpdef int to_relabeled_vertex(self, object orig_vertex):
+    cpdef unsigned int to_relabeled_vertex(self, object orig_vertex):
         return self.orig_to_relabeled_verts[orig_vertex]
 
     cpdef object __to_relabeled_metavertex_iter(self, object orig_vertex_iter):
@@ -87,7 +89,7 @@ cdef class ZFSearchMetagraph:
         bitset_free(self.meta_vertex)
 
     cdef void initialize_neighbors(self, graph_copy):
-        cdef int i
+        cdef unsigned int i
         for i in self.vertices_set:
             #TODO: Only so Dijkstra code doesn't break. Ideally want to remove this somehow
             neighbors = graph_copy.neighbors(i)
@@ -95,7 +97,7 @@ cdef class ZFSearchMetagraph:
             self.closed_neighborhood_list[i] = FrozenBitset(neighbors + [i])
 
     def initialize_neighborhood_array(self, graph_copy):
-        cdef int vertex, neighbor
+        cdef unsigned int vertex, neighbor
         # create pointer to bitset array with neighborhoods
         for vertex in range(self.num_vertices):
             bitset_init(self.neighborhood_array[vertex], self.num_vertices)
@@ -147,14 +149,14 @@ cdef class ZFSearchMetagraph:
         return set_to_return
     
 
-    cdef neighbors_with_edges_add_to_queue(self, FrozenBitset meta_vertex, FastQueueForBFS queue, int previous_cost):
+    cdef void neighbors_with_edges_add_to_queue(self, FrozenBitset meta_vertex, FastQueueForBFS queue, unsigned int previous_cost):
         # verify that 'meta_vertex' is actually a subset of the vertices
         # of self.primal_graph, to be interpreted as the filled subset
 
-        cdef int new_vx_to_make_force
-        cdef int cost
-        cdef int i
-        cdef int num_unfilled_neighbors
+        cdef unsigned int new_vx_to_make_force
+        cdef unsigned int cost
+        cdef unsigned int i
+        cdef unsigned int num_unfilled_neighbors
 
         bitset_copy(self.meta_vertex, &meta_vertex._bitset[0])
         
@@ -190,7 +192,7 @@ cdef class ZFSearchMetagraph:
     cdef set build_zf_set(self, list final_metavx_list):
         cdef set zf_set = set()
         cdef FrozenBitset filled_vertices
-        cdef int forcing_vx 
+        cdef unsigned int forcing_vx
 
         # For each metavertex
         for filled_vertices, forcing_vx in final_metavx_list[:-1]: #Do not need to do the last metavertex (everything is already filled)
@@ -203,44 +205,38 @@ cdef class ZFSearchMetagraph:
         return zf_set
 
     cpdef set dijkstra(self, frozenset start, frozenset target):
-        cdef int current_distance
-        cdef int cost_of_making_it_force
-        cdef int what_forced
-        cdef int new_dist
-        cdef FrozenBitset current
+        cdef unsigned int current_distance
+        cdef tuple unvisited_metavx
 
         cdef FrozenBitset parent
-        cdef int vx_to_force
+        cdef unsigned int vx_to_force
 
-        cdef dict previous = {}
-        cdef FrozenBitset empty_FrozenBitset = FrozenBitset()
         cdef FastQueueForBFS unvisited_queue = FastQueueForBFS(self.num_vertices)
         
-        cdef FrozenBitset start_FrozenBitset = FrozenBitset(start, capacity=self.num_vertices)
-        cdef FrozenBitset target_FrozenBitset = FrozenBitset(target, capacity=self.num_vertices)
+        cdef FrozenBitset start_metavertex = FrozenBitset(start, capacity=self.num_vertices)
+        cdef FrozenBitset target_metavertex = FrozenBitset(target, capacity=self.num_vertices)
         
-        unvisited_queue.push(0, (start_FrozenBitset, SENTINEL))
-        while True:
-            current_distance, unvisited_metavx = unvisited_queue.pop_and_get_priority()
-            
-            parent = unvisited_metavx[0] # Previous closure
-            vx_to_force = unvisited_metavx[1]
+        # Start us off
+        cdef FrozenBitset current = start_metavertex
+        cdef dict previous = {
+                current: (start_metavertex, None)
+                }
+        self.neighbors_with_edges_add_to_queue(current, unvisited_queue, 0)
 
-            if vx_to_force == SENTINEL:
-                current = empty_FrozenBitset
-            else:
-                current = self.extend_closure(parent, self.closed_neighborhood_list[vx_to_force])
-            
+        while current != target_metavertex:
+            current_distance, unvisited_metavx = unvisited_queue.pop_and_get_priority()
+            parent, vx_to_force = unvisited_metavx # Previous closure, added vertex
+
+            current = self.extend_closure(parent, self.closed_neighborhood_list[vx_to_force])
             if current in previous:
                 continue
 
             previous[current] = (parent, vx_to_force)
-            if current == target_FrozenBitset: # We have found the target vertex, can stop searching now
-                break
             self.neighbors_with_edges_add_to_queue(current, unvisited_queue, current_distance)
                 
-        cdef list cur_path = [(target_FrozenBitset, SENTINEL)]
-        cdef list shortest_path = ZFSearchMetagraph.shortest(start_FrozenBitset, target_FrozenBitset, cur_path, previous)
+        # Can this be simpler by making this a linked list instead? It would be more like a graph imo
+        cdef list cur_path = [(target_metavertex, None)]
+        cdef list shortest_path = ZFSearchMetagraph.shortest(start_metavertex, target_metavertex, cur_path, previous)
         cdef object zf_set_with_old_labels = map(self.to_orig_vertex, self.build_zf_set(shortest_path))
 
         return set(zf_set_with_old_labels)
