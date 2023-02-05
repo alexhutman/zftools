@@ -19,3 +19,9 @@ This program calculates the zero forcing number (and set) of any graph. The zero
 `sage --python3 setup.py -h`
 (You can also use the `-h` flag in subcommands. i.e. `sage --python3 setup.py build_ext -h`
 
+## Running in Docker
+1. Download Docker from the [Docker website](https://www.docker.com/)
+2. Run `docker build -t zeroforcing .` in the directory this git repository is located in
+  * You can specify `--build-arg ZF_BUILD_ARGS="--debug"` before the `-t` flag to build in debug mode
+3. Run `docker run --rm -it zeroforcing`
+4. Follow the "Usage" section
