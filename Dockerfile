@@ -13,6 +13,6 @@ WORKDIR ./ZeroForcingNumber
 RUN : \
 	&& git checkout ${BRANCH} \
 	&& sage --python3 setup.py build_ext ${ZF_BUILD_ARGS} \
-	&& sage --python3 -m pip install -r test-requirements.txt
+	&& sage --python3 -m pip install -r test/requirements.txt
 
 ENTRYPOINT ["/bin/bash"]
