@@ -278,7 +278,9 @@ def _get_setup_parameters(extensions, zf_args, setup_args):
                     "profile": True,
                     "linetrace": True
                 })
-            for ext in extensions:
+            exts_to_skip = {"test.wavefront"}
+            should_compile_in_debug_mode = lambda ext: ext.name not in exts_to_skip
+            for ext in filter(should_compile_in_debug_mode, extensions):
                 ext.define_macros = [("CYTHON_TRACE", 1)]
 
         # Only Cythonize if we're calling build_ext
