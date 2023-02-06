@@ -1,9 +1,10 @@
+from contextlib import contextmanager
+
 import pytest
 
-from contextlib import contextmanager
 from sage.all import graphs
-from zeroforcing.metagraph import ZFSearchMetagraph
 from test.wavefront import zero_forcing_set_wavefront  # Make optional?
+from zeroforcing.metagraph import ZFSearchMetagraph
 
 
 GRAPHS_TO_TEST = [
@@ -63,18 +64,18 @@ class DijkstraTest:
 
 
 @contextmanager
-def profiler_enabled(p):
+def profiler_enabled(prof):
     # Stupid hack to be able to call `with` around a code block and only profile if it's enabled
     # Setup
-    should_profile = p is not None
+    should_profile = prof is not None
     if should_profile:
-        p.enable()
+        prof.enable()
 
     yield
 
     # Teardown
     if should_profile:
-        p.disable()
+        prof.disable()
 
 
 @pytest.mark.parametrize(

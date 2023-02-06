@@ -2,8 +2,8 @@ import argparse
 import cProfile
 import io
 import os
-import pytest
 import pstats
+import pytest
 
 _DEFAULT_NUM_RESULTS = 25
 _NUM_RESULTS_FLAG = "--num-results"
@@ -14,15 +14,15 @@ _PROFILER_RESULTS_SECTION = "profiler results:"
 
 
 def check_positive(value):
-    err = argparse.ArgumentTypeError("Provide a positive integer.")
+    pos_int_err = argparse.ArgumentTypeError("Provide a positive integer.")
     try:
         ivalue = int(value)
         if ivalue > 0:
             return ivalue
-    except ValueError as e:
-        raise err from e
+    except ValueError as val_err:
+        raise pos_int_err from val_err
 
-    raise err
+    raise pos_int_err
 
 
 def help_str_with_default(help_str, default):
@@ -48,7 +48,7 @@ def pytest_addoption(parser):
 
 
 def pytest_sessionstart(session):
-    session.results = dict()
+    session.results = {}
 
 
 def pytest_sessionfinish(session, exitstatus):
