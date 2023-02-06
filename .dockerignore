@@ -1,0 +1,6 @@
+**/build
+**/__pycache__
+zeroforcing/**/*.c
+zeroforcing/**/*.so
+test/**/*.c
+test/**/*.so
