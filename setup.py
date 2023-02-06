@@ -16,24 +16,19 @@ from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 
 
-class ZeroForcingFormatter(
-        argparse.ArgumentDefaultsHelpFormatter,
-        argparse.RawTextHelpFormatter):
-    def _get_help_string(self, action): # Adapted from https://stackoverflow.com/a/34558278
+class ZeroForcingFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawTextHelpFormatter):
+    def _get_help_string(self, action):  # Adapted from https://stackoverflow.com/a/34558278
         help_str = action.help
         defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
 
-        default_str_present = '%(default)' in action.help
+        default_str_present = "%(default)" in action.help
         is_suppress_action = action.default is argparse.SUPPRESS
         not_sure_about_this_one = action.option_strings or action.nargs in defaulting_nargs
-        conditions = [
-                not default_str_present,
-                not is_suppress_action,
-                not_sure_about_this_one
-                ]
+        conditions = [not default_str_present, not is_suppress_action, not_sure_about_this_one]
         if all(conditions):
-            help_str += ' (default: %(default)s)'
+            help_str += " (default: %(default)s)"
         return help_str
+
 
 class ZeroForcingArgument:
     def __init__(self, *args, **kwargs):
@@ -150,7 +145,7 @@ class CleanZeroForcing(clean):
     def __remove_all_suffixes(path):
         cur_path = path
         while len(cur_path.suffixes) > 0:
-            cur_path = cur_path.with_suffix('')
+            cur_path = cur_path.with_suffix("")
         return cur_path
 
     @staticmethod
@@ -163,7 +158,9 @@ class CleanZeroForcing(clean):
     @staticmethod
     def __clean_artifacts():
         # TODO: Gather the list first, then ask if user wants to delete, add a -y flag ('store_true') to auto say yes, only THEN delete
-        all_ext_src_paths = (Path(source) for ext in _extension_modules for source in ext.sources) # TODO: get these recursively in case Extensions are nested (if even possible?)
+        all_ext_src_paths = (
+            Path(source) for ext in _extension_modules for source in ext.sources
+        )  # TODO: get these recursively in case Extensions are nested (if even possible?)
         artifact_exts = [".c", ".*.so"]
         all_artifact_paths = CleanZeroForcing.__get_artifact_globs_gen(all_ext_src_paths, artifact_exts)
 
@@ -182,115 +179,93 @@ class CleanZeroForcing(clean):
     def __notify_path_removal_err(path):
         print(f"could not remove '{path}'", file=sys.stderr)
 
+
 def _get_sage_root():
     sage_root = os.getenv("SAGE_ROOT")
     if sage_root is not None:
         sage_root = Path(sage_root).resolve() / "sage"
     return sage_root
 
+
 def _get_prog_name():
     sage_root = _get_sage_root()
-    executable = '[path_to_sage_executable]' if sage_root is None else sage_root
+    executable = "[path_to_sage_executable]" if sage_root is None else sage_root
     setup_file_path = Path(__file__).name
     return f"{executable} {setup_file_path}"
 
 
 class ZeroForcingArguments(Enum):
-    ROOT = ZeroForcingArgument(
-            prog=_get_prog_name()
-            )
-    SUBCOMMANDS = ZeroForcingArgument(
-            title="subcommands",
-            help='valid subcommands',
-            dest="subcommand",
-            required=True
-            )
+    ROOT = ZeroForcingArgument(prog=_get_prog_name())
+    SUBCOMMANDS = ZeroForcingArgument(title="subcommands", help="valid subcommands", dest="subcommand", required=True)
     BUILD_EXT = ZeroForcingArgument(
-            "build_ext",
-            cmdclass=InstallZeroForcing,
-            help='build the Zero Forcing code',
-            formatter_class=ZeroForcingFormatter
-            )
+        "build_ext",
+        cmdclass=InstallZeroForcing,
+        help="build the Zero Forcing code",
+        formatter_class=ZeroForcingFormatter,
+    )
     DEBUG = ZeroForcingArgument(
-            "--debug",
-            action='store_true',
-            help="whether or not to compile in debug mode, which allows for profiling and line tracing."
-            )
+        "--debug",
+        action="store_true",
+        help="whether or not to compile in debug mode, which allows for profiling and line tracing.",
+    )
     COMPILER_LANG = ZeroForcingArgument(
-            "--compiler-lang",
-            default="2",
-            choices=["2", "3"],
-            help=textwrap.dedent(
-                """\
+        "--compiler-lang",
+        default="2",
+        choices=["2", "3"],
+        help=textwrap.dedent(
+            """\
                 the version to use for the Cython compiler's \"language_level\" directive. (default: %(default)s)
                 - https://cython.readthedocs.io/en/latest/src/userguide/source_files_and_compilation.html#compiler-directives
-                """)
-            )
+                """
+        ),
+    )
     CLEAN = ZeroForcingArgument(
-            "clean",
-            cmdclass=CleanZeroForcing,
-            help='clean your workspace of all build artifacts',
-            formatter_class=ZeroForcingFormatter
-            )
+        "clean",
+        cmdclass=CleanZeroForcing,
+        help="clean your workspace of all build artifacts",
+        formatter_class=ZeroForcingFormatter,
+    )
+
 
 _extension_modules = [
-        Extension(
-            'zeroforcing.fastqueue',
-            sources=['zeroforcing/fastqueue.pyx']
-        ),
-        Extension(
-            'zeroforcing.metagraph',
-            sources=['zeroforcing/metagraph.pyx']
-        ),
-        # TODO: Add flag whether or not to compile this
-        Extension(
-            'test.wavefront',
-            sources=['test/wavefront.pyx']
-        )
+    Extension("zeroforcing.fastqueue", sources=["zeroforcing/fastqueue.pyx"]),
+    Extension("zeroforcing.metagraph", sources=["zeroforcing/metagraph.pyx"]),
+    # TODO: Add flag whether or not to compile this
+    Extension("test.wavefront", sources=["test/wavefront.pyx"]),
 ]
+
 
 def get_enum_val(e):
     return e.value
 
+
 def get_enum_vals(it):
     return map(get_enum_val, it)
+
 
 def _get_setup_parameters(extensions, zf_args, setup_args):
     commands = [ZeroForcingArguments.BUILD_EXT, ZeroForcingArguments.CLEAN]
     setup_params = {
-            "name": "zeroforcing",
-            "packages": [ext.name for ext in extensions],
-            "cmdclass": {
-                cmd.title: cmd.cmdclass
-                for cmd in get_enum_vals(commands)
-                if cmd.cmdclass is not None
-                }
-            }
+        "name": "zeroforcing",
+        "packages": [ext.name for ext in extensions],
+        "cmdclass": {cmd.title: cmd.cmdclass for cmd in get_enum_vals(commands) if cmd.cmdclass is not None},
+    }
 
     if zf_args.subcommand == get_enum_val(ZeroForcingArguments.BUILD_EXT).title:
-        comp_directives = {
-            "language_level": zf_args.compiler_lang
-        }
+        comp_directives = {"language_level": zf_args.compiler_lang}
 
         if zf_args.debug:
             print(f"Compiling in debug mode")
-            comp_directives.update({
-                    "profile": True,
-                    "linetrace": True
-                })
+            comp_directives.update({"profile": True, "linetrace": True})
             exts_to_skip = {"test.wavefront"}
             should_compile_in_debug_mode = lambda ext: ext.name not in exts_to_skip
             for ext in filter(should_compile_in_debug_mode, extensions):
                 ext.define_macros = [("CYTHON_TRACE", 1)]
 
         # Only Cythonize if we're calling build_ext
-        setup_params.update({
-            "ext_modules": cythonize(
-                extensions,
-                compiler_directives=comp_directives
-            )
-        })
+        setup_params.update({"ext_modules": cythonize(extensions, compiler_directives=comp_directives)})
     return setup_params
+
 
 def _get_cmd_args():
     root = get_enum_val(ZeroForcingArguments.ROOT)
@@ -299,7 +274,7 @@ def _get_cmd_args():
     debug = get_enum_val(ZeroForcingArguments.DEBUG)
     compiler_lang = get_enum_val(ZeroForcingArguments.COMPILER_LANG)
     clean = get_enum_val(ZeroForcingArguments.CLEAN)
-    
+
     # Probably not the cleanest/best way to do this but 🤷
     root.parser = root.apply_func(argparse.ArgumentParser)
     subcommands.parser = subcommands.add_subparsers(root.parser)
@@ -310,9 +285,11 @@ def _get_cmd_args():
 
     return root.parser.parse_known_args()
 
+
 def main():
     zero_forcing_args, setup_args = _get_cmd_args()
     setup(**_get_setup_parameters(_extension_modules, zero_forcing_args, setup_args))
+
 
 if __name__ == "__main__":
     main()
