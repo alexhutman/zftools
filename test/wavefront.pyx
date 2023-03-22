@@ -6,11 +6,8 @@
 #include "sage/ext/stdsage.pxi" 
 #directly include the content intead
 ### Partial contents of stdsage.pxi start here ###
-cimport cysignals.memory
 
 from cysignals.memory cimport sig_malloc as sage_malloc
-from cysignals.memory cimport sig_realloc as sage_realloc
-from cysignals.memory cimport sig_calloc as sage_calloc
 from cysignals.memory cimport sig_free as sage_free
 ### Partial contents of stdsage.pxi end here ###
 
@@ -18,7 +15,6 @@ from cysignals.memory cimport sig_free as sage_free
 ### seems nothing happend if not including it
 #include 'sage/ext/cdefs.pxi'
 #include 'sage/ext/interrupt.pxi'
-cimport cysignals.signals
 
 """
 Fast computation of zero forcing sets
