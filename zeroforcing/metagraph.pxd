@@ -1,7 +1,7 @@
 from sage.data_structures.bitset cimport Bitset, FrozenBitset
 from sage.data_structures.bitset_base cimport bitset_t
 
-from fastqueue cimport FastQueueForBFS
+from zeroforcing.fastqueue cimport FastQueueForBFS
 
 cdef class ZFSearchMetagraph:
     cdef unsigned int num_vertices, vertex_to_fill

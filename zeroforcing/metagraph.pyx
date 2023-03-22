@@ -27,7 +27,7 @@ from cysignals.memory cimport (
     sig_malloc
 )
 
-from fastqueue cimport FastQueueForBFS
+from zeroforcing.fastqueue cimport FastQueueForBFS
 
 
 cdef class ZFSearchMetagraph:
