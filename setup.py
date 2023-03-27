@@ -13,7 +13,7 @@ from enum import Enum
 from pathlib import Path
 
 from Cython.Build import cythonize
-from Cython.Distutils import build_ext
+from Cython.Build import build_ext
 
 
 class ZeroForcingFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawTextHelpFormatter):
@@ -232,7 +232,7 @@ _extension_modules = [
     Extension("zeroforcing.fastqueue", sources=["zeroforcing/fastqueue.pyx"]),
     Extension("zeroforcing.metagraph", sources=["zeroforcing/metagraph.pyx"]),
     # TODO: Add flag whether or not to compile this
-    Extension("test.wavefront", sources=["test/wavefront.pyx"]),
+    Extension("test.verifiability.wavefront", sources=["test/verifiability/wavefront.pyx"]),
 ]
 
 
