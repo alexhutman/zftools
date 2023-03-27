@@ -231,6 +231,7 @@ class ZeroForcingArguments(Enum):
 _extension_modules = [
     Extension("zeroforcing.fastqueue", sources=["zeroforcing/fastqueue.pyx"]),
     Extension("zeroforcing.metagraph", sources=["zeroforcing/metagraph.pyx"]),
+    Extension("zeroforcing.radix_tree", sources=["zeroforcing/radix_tree.pyx"]),
     # TODO: Add flag whether or not to compile this
     Extension("test.verifiability.wavefront", sources=["test/verifiability/wavefront.pyx"]),
 ]
