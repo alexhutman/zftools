@@ -3,7 +3,7 @@ from contextlib import contextmanager
 import pytest
 
 from sage.all import graphs
-from test.wavefront import zero_forcing_set_wavefront  # Make optional?
+from test.verifiability.wavefront import zero_forcing_set_wavefront  # Make optional?
 from zeroforcing.metagraph import ZFSearchMetagraph
 
 
@@ -79,13 +79,13 @@ def profiler_enabled(prof):
 
 
 @pytest.mark.parametrize(
-    "graph,testcase",
+    "testcase",
     [
-        pytest.param(graph, DijkstraTest(graph), id=str(graph))
+        pytest.param(DijkstraTest(graph), id=str(graph))
         for graph in map(lambda g: g.copy(immutable=True), GRAPHS_TO_TEST)
     ],
 )
-def test_all_graphs(graph, testcase, profiler):
+def test_all_graphs(testcase, profiler):
     with profiler_enabled(profiler):
         zf_set = testcase.metagraph.dijkstra(testcase.all_unfilled, testcase.all_filled)
 
@@ -99,7 +99,6 @@ def test_all_graphs(graph, testcase, profiler):
 
 def main():
     pass
-
 
 if __name__ == "__main__":
     main()
