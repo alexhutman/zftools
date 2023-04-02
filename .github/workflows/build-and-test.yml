@@ -1,0 +1,39 @@
+name: Build and Test
+env:
+  SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+on:
+  push:
+    branches:
+      - master
+      - cleanup
+  pull_request:
+    branches:
+      - master
+jobs:
+  dedupe:
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    steps:
+      - name: Sanity checks
+        run: |
+            echo "ref/sha = ${{ github.head_ref || github.ref_name }}/${{ github.event.pull_request.head.sha || github.sha }}"
+      - id: skip_check
+        name: Check for duplicate jobs
+        uses: fkirc/skip-duplicate-actions@v5.3.0
+        with:
+          concurrent_skipping: 'same_content_newer'
+          paths_ignore: '["**/README.md", "**/docs/**"]'
+  build_and_test:
+    needs: dedupe
+    if: needs.dedupe.outputs.should_skip != 'true'
+    runs-on:
+      - ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build the ZeroForcing Docker image
+        run: docker build . --file Dockerfile --tag "zeroforcing:${SHA}"
+      - name: Test ZeroForcing code
+        run: |
+            docker run --rm "zeroforcing:${SHA}" /usr/bin/sage --python3 -m pytest --profile
