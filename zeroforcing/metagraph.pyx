@@ -22,9 +22,9 @@ from sage.data_structures.bitset_base cimport (
     bitset_union
 )
 
-from cysignals.memory cimport (
-    sig_free,
-    sig_malloc
+from cpython.mem cimport (
+    PyMem_Malloc,
+    PyMem_Free
 )
 
 from zeroforcing.fastqueue cimport FastQueueForBFS
@@ -35,7 +35,9 @@ cdef class ZFSearchMetagraph:
 
     def __cinit__(self, graph_for_zero_forcing):
         self.num_vertices = graph_for_zero_forcing.num_verts()
-        self.neighborhood_array = <bitset_t*> sig_malloc(self.num_vertices*sizeof(bitset_t)) #ALLOCATE NEIGHBORHOOD_ARRAY
+        self.neighborhood_array = <bitset_t*> PyMem_Malloc(self.num_vertices*sizeof(bitset_t)) #ALLOCATE NEIGHBORHOOD_ARRAY
+        if not self.neighborhood_array:
+            raise MemoryError("Could not allocate neighborhood array")
         
         # Initialize/clear extend_closure bitsets
         bitset_init(self.filled_set, self.num_vertices)
@@ -78,7 +80,7 @@ cdef class ZFSearchMetagraph:
         self.initialize_neighborhood_array(graph_copy)
 
     def __dealloc__(self):
-        sig_free(self.neighborhood_array) #DEALLOCATE NEIGHBORHOOD_ARRAY
+        PyMem_Free(self.neighborhood_array) #DEALLOCATE NEIGHBORHOOD_ARRAY
         
         bitset_free(self.filled_set)
         bitset_free(self.vertices_to_check)
