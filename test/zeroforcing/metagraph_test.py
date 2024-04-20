@@ -2,35 +2,35 @@ from contextlib import contextmanager
 
 import pytest
 
-from sage.all import graphs
+from sage.graphs.graph_generators import GraphGenerators
 from test.verifiability.wavefront import zero_forcing_set_wavefront  # Make optional?
 from zeroforcing.metagraph import ZFSearchMetagraph
 
 
 GRAPHS_TO_TEST = [
-    graphs.BrinkmannGraph(),
-    graphs.BrinkmannGraph().line_graph(),
-    graphs.ClebschGraph(),
-    graphs.ClebschGraph().line_graph(),
-    graphs.CompleteGraph(16),
-    graphs.CoxeterGraph(),
-    graphs.CoxeterGraph().line_graph(),
-    graphs.CubeGraph(5),
-    graphs.DesarguesGraph(),
-    graphs.DodecahedralGraph(),
-    graphs.HeawoodGraph(),
-    graphs.HoffmanGraph(),
-    graphs.HoffmanGraph().complement(),
-    graphs.MycielskiGraph(6),
-    graphs.PaleyGraph(17),
-    graphs.PaleyGraph(17).line_graph(),
-    graphs.PaleyGraph(73),
-    graphs.PathGraph(30),
-    graphs.PetersenGraph(),
-    graphs.RandomTree(22),
-    graphs.RobertsonGraph(),
-    graphs.RobertsonGraph().line_graph(),
-    graphs.StarGraph(4),
+    GraphGenerators.BrinkmannGraph(),
+    GraphGenerators.BrinkmannGraph().line_graph(),
+    GraphGenerators.ClebschGraph(),
+    GraphGenerators.ClebschGraph().line_graph(),
+    GraphGenerators.CompleteGraph(16),
+    GraphGenerators.CoxeterGraph(),
+    GraphGenerators.CoxeterGraph().line_graph(),
+    GraphGenerators.CubeGraph(5),
+    GraphGenerators.DesarguesGraph(),
+    GraphGenerators.DodecahedralGraph(),
+    GraphGenerators.HeawoodGraph(),
+    GraphGenerators.HoffmanGraph(),
+    GraphGenerators.HoffmanGraph().complement(),
+    GraphGenerators.MycielskiGraph(6),
+    GraphGenerators.PaleyGraph(17),
+    GraphGenerators.PaleyGraph(17).line_graph(),
+    GraphGenerators.PaleyGraph(73),
+    GraphGenerators.PathGraph(30),
+    GraphGenerators.PetersenGraph(),
+    GraphGenerators.RandomTree(22),
+    GraphGenerators.RobertsonGraph(),
+    GraphGenerators.RobertsonGraph().line_graph(),
+    GraphGenerators.StarGraph(4),
 ]
 
 
