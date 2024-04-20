@@ -49,7 +49,7 @@ cdef class ZFSearchMetagraph:
         bitset_init(self.meta_vertex, self.num_vertices)
 
     # TODO: Get rid of this crap, only have user call in terms of original vertices
-    cpdef object to_orig_vertex(self, unsigned int relabeled_vertex):
+    cpdef object to_orig_vertex(self, size_t relabeled_vertex):
         return self.relabeled_to_orig_verts[relabeled_vertex]
 
     cpdef object __to_orig_metavertex_iter(self, object relabeled_metavertex_iter):
@@ -58,7 +58,7 @@ cdef class ZFSearchMetagraph:
     cpdef frozenset to_orig_metavertex(self, object relabeled_metavertex_iter):
         return frozenset(self.__to_orig_metavertex_iter(relabeled_metavertex_iter))
 
-    cpdef unsigned int to_relabeled_vertex(self, object orig_vertex):
+    cpdef size_t to_relabeled_vertex(self, object orig_vertex):
         return self.orig_to_relabeled_verts[orig_vertex]
 
     cpdef object __to_relabeled_metavertex_iter(self, object orig_vertex_iter):
@@ -91,7 +91,7 @@ cdef class ZFSearchMetagraph:
         bitset_free(self.meta_vertex)
 
     cdef void initialize_neighbors(self, graph_copy):
-        cdef unsigned int i
+        cdef size_t i
         for i in self.vertices_set:
             #TODO: Only so Dijkstra code doesn't break. Ideally want to remove this somehow
             neighbors = graph_copy.neighbors(i)
@@ -99,7 +99,7 @@ cdef class ZFSearchMetagraph:
             self.closed_neighborhood_list[i] = FrozenBitset(neighbors + [i])
 
     def initialize_neighborhood_array(self, graph_copy):
-        cdef unsigned int vertex, neighbor
+        cdef size_t vertex, neighbor
         # create pointer to bitset array with neighborhoods
         for vertex in range(self.num_vertices):
             bitset_init(self.neighborhood_array[vertex], self.num_vertices)
@@ -151,14 +151,14 @@ cdef class ZFSearchMetagraph:
         return set_to_return
     
 
-    cdef void neighbors_with_edges_add_to_queue(self, FrozenBitset meta_vertex, FastQueueForBFS queue, unsigned int previous_cost):
+    cdef void neighbors_with_edges_add_to_queue(self, FrozenBitset meta_vertex, FastQueueForBFS queue, size_t previous_cost):
         # verify that 'meta_vertex' is actually a subset of the vertices
         # of self.primal_graph, to be interpreted as the filled subset
 
-        cdef unsigned int new_vx_to_make_force
-        cdef unsigned int cost
-        cdef unsigned int i
-        cdef unsigned int num_unfilled_neighbors
+        cdef size_t new_vx_to_make_force
+        cdef size_t cost
+        cdef size_t i
+        cdef size_t num_unfilled_neighbors
 
         bitset_copy(self.meta_vertex, &meta_vertex._bitset[0])
         
@@ -194,7 +194,7 @@ cdef class ZFSearchMetagraph:
     cdef set build_zf_set(self, list final_metavx_list):
         cdef set zf_set = set()
         cdef FrozenBitset filled_vertices
-        cdef unsigned int forcing_vx
+        cdef size_t forcing_vx
 
         # For each metavertex
         for filled_vertices, forcing_vx in final_metavx_list[:-1]: #Do not need to do the last metavertex (everything is already filled)
@@ -207,11 +207,11 @@ cdef class ZFSearchMetagraph:
         return zf_set
 
     cpdef set dijkstra(self, frozenset start, frozenset target):
-        cdef unsigned int current_distance
+        cdef size_t current_distance
         cdef tuple unvisited_metavx
 
         cdef FrozenBitset parent
-        cdef unsigned int vx_to_force
+        cdef size_t vx_to_force
 
         cdef FastQueueForBFS unvisited_queue = FastQueueForBFS(self.num_vertices)
         
