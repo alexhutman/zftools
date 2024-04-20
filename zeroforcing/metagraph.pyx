@@ -35,7 +35,7 @@ from zeroforcing.fastqueue cimport FastQueueForBFS
 cdef class ZFSearchMetagraph:
     __slots__ = ("num_vertices", "vertex_to_fill", "neighbors_dict", "closed_neighborhood_list", "orig_to_relabeled_verts", "relabeled_to_orig_verts", "vertices_set")
 
-    def __cinit__(self, graph_for_zero_forcing):
+    def __cinit__(self, object graph_for_zero_forcing not None):
         self.num_vertices = (<CGraphBackend>graph_for_zero_forcing._backend).cg().num_verts
         self.neighborhood_array = <bitset_t*> PyMem_Malloc(self.num_vertices*sizeof(bitset_t)) #ALLOCATE NEIGHBORHOOD_ARRAY
         if not self.neighborhood_array:
@@ -69,7 +69,7 @@ cdef class ZFSearchMetagraph:
     cpdef frozenset to_relabeled_metavertex(self, object orig_vertex_iter):
         return frozenset(self.__to_relabeled_metavertex_iter(orig_vertex_iter))
 
-    def __init__(self, graph_for_zero_forcing):
+    def __init__(self, graph_for_zero_forcing not None):
         graph_copy = graph_for_zero_forcing.copy(immutable=False)
         self.orig_to_relabeled_verts = graph_copy.relabel(inplace=True, return_map=True)
         self.relabeled_to_orig_verts = {v: k for k,v in self.orig_to_relabeled_verts.items()}
