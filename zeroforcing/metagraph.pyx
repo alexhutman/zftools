@@ -37,7 +37,7 @@ cdef class ZFSearchMetagraph:
 
     def __cinit__(self, object graph_for_zero_forcing not None):
         self.num_vertices = (<CGraphBackend>graph_for_zero_forcing._backend).cg().num_verts
-        self.neighborhood_array = <bitset_t*> PyMem_Malloc(self.num_vertices*sizeof(bitset_t)) #ALLOCATE NEIGHBORHOOD_ARRAY
+        self.neighborhood_array = <bitset_t*> PyMem_Malloc(self.num_vertices*sizeof(bitset_t))
         if not self.neighborhood_array:
             raise MemoryError("Could not allocate neighborhood array")
         
@@ -74,10 +74,10 @@ cdef class ZFSearchMetagraph:
         self.orig_to_relabeled_verts = graph_copy.relabel(inplace=True, return_map=True)
         self.relabeled_to_orig_verts = {v: k for k,v in self.orig_to_relabeled_verts.items()}
         
-        self.vertices_set = set(graph_copy.vertices(sort=False))
-        
-        self.neighbors_dict = {}
         self.closed_neighborhood_list = {}
+        self.neighbors_dict = {}
+        self.vertices_set = set(graph_copy.vertices(sort=False))
+
         self.initialize_neighbors(graph_copy)
         self.initialize_neighborhood_array(graph_copy)
 
