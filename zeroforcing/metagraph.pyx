@@ -40,6 +40,9 @@ cdef class ZFSearchMetagraph:
         self.neighborhood_array = <bitset_t*> PyMem_Malloc(self.num_vertices*sizeof(bitset_t))
         if not self.neighborhood_array:
             raise MemoryError("Could not allocate neighborhood array")
+
+        for idx in range(self.num_vertices):
+            bitset_init(self.neighborhood_array[idx], self.num_vertices)
         
         # Initialize/clear extend_closure bitsets
         bitset_init(self.filled_set, self.num_vertices)
@@ -82,7 +85,9 @@ cdef class ZFSearchMetagraph:
         self.initialize_neighborhood_array(graph_copy)
 
     def __dealloc__(self):
-        PyMem_Free(self.neighborhood_array) #DEALLOCATE NEIGHBORHOOD_ARRAY
+        for idx in range(self.num_vertices):
+            bitset_free(self.neighborhood_array[idx])
+        PyMem_Free(self.neighborhood_array)
         
         bitset_free(self.filled_set)
         bitset_free(self.vertices_to_check)
