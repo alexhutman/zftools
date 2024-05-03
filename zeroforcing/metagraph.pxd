@@ -3,13 +3,25 @@ from sage.data_structures.bitset_base cimport bitset_t
 
 from zeroforcing.fastqueue cimport FastQueueForBFS
 
+
+cdef class ExtendClosureBitsets:
+    cdef:
+        bitset_t filled_set
+        bitset_t vertices_to_check
+        bitset_t vertices_to_recheck
+        bitset_t filled_neighbors
+        bitset_t unfilled_neighbors
+        bitset_t filled_neighbors_of_vx_to_fill
+
+        void clear_all(self)
+
 cdef class ZFSearchMetagraph:
     cdef size_t num_vertices, vertex_to_fill
     cdef dict neighbors_dict, closed_neighborhood_list, orig_to_relabeled_verts, relabeled_to_orig_verts
     cdef set vertices_set
     cdef bitset_t meta_vertex
     cdef bitset_t *neighborhood_array
-    cdef bitset_t filled_set, vertices_to_check, vertices_to_recheck, filled_neighbors, unfilled_neighbors, filled_neighbors_of_vx_to_fill # extend_closure bitsets
+    cdef ExtendClosureBitsets ec_bitsets
 
     cdef void initialize_neighbors(self, object)
     cdef FrozenBitset extend_closure(self, FrozenBitset, FrozenBitset)

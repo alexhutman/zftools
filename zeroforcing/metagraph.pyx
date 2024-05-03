@@ -32,26 +32,46 @@ from cpython.mem cimport (
 from zeroforcing.fastqueue cimport FastQueueForBFS
 
 
+cdef class ExtendClosureBitsets:
+    def __cinit__(self, size_t num_vertices):
+        bitset_init(self.filled_set, num_vertices)
+        bitset_init(self.vertices_to_check, num_vertices)
+        bitset_init(self.vertices_to_recheck, num_vertices)
+        bitset_init(self.filled_neighbors, num_vertices)
+        bitset_init(self.unfilled_neighbors, num_vertices)
+        bitset_init(self.filled_neighbors_of_vx_to_fill, num_vertices)
+
+    def __dealloc__(self):
+        bitset_free(self.filled_set)
+        bitset_free(self.vertices_to_check)
+        bitset_free(self.vertices_to_recheck)
+        bitset_free(self.filled_neighbors)
+        bitset_free(self.unfilled_neighbors)
+        bitset_free(self.filled_neighbors_of_vx_to_fill)
+
+    cdef void clear_all(self):
+        bitset_clear(self.filled_set)
+        bitset_clear(self.vertices_to_check)
+        bitset_clear(self.vertices_to_recheck)
+        bitset_clear(self.filled_neighbors)
+        bitset_clear(self.unfilled_neighbors)
+        bitset_clear(self.filled_neighbors_of_vx_to_fill)
+
+
 cdef class ZFSearchMetagraph:
     __slots__ = ("num_vertices", "vertex_to_fill", "neighbors_dict", "closed_neighborhood_list", "orig_to_relabeled_verts", "relabeled_to_orig_verts", "vertices_set")
 
     def __cinit__(self, object graph_for_zero_forcing not None):
         self.num_vertices = (<CGraphBackend>graph_for_zero_forcing._backend).cg().num_verts
+        self.ec_bitsets = ExtendClosureBitsets(self.num_vertices)
+        bitset_init(self.meta_vertex, self.num_vertices)
+
         self.neighborhood_array = <bitset_t*> PyMem_Malloc(self.num_vertices*sizeof(bitset_t))
         if not self.neighborhood_array:
             raise MemoryError("Could not allocate neighborhood array")
 
         for idx in range(self.num_vertices):
             bitset_init(self.neighborhood_array[idx], self.num_vertices)
-        
-        # Initialize/clear extend_closure bitsets
-        bitset_init(self.filled_set, self.num_vertices)
-        bitset_init(self.vertices_to_check, self.num_vertices)
-        bitset_init(self.vertices_to_recheck, self.num_vertices)
-        bitset_init(self.filled_neighbors, self.num_vertices)
-        bitset_init(self.unfilled_neighbors, self.num_vertices)
-        bitset_init(self.filled_neighbors_of_vx_to_fill, self.num_vertices)
-        bitset_init(self.meta_vertex, self.num_vertices)
 
     # TODO: Get rid of this crap, only have user call in terms of original vertices
     cpdef object to_orig_vertex(self, size_t relabeled_vertex):
@@ -85,17 +105,11 @@ cdef class ZFSearchMetagraph:
         self.initialize_neighborhood_array(graph_copy)
 
     def __dealloc__(self):
+        bitset_free(self.meta_vertex)
+
         for idx in range(self.num_vertices):
             bitset_free(self.neighborhood_array[idx])
         PyMem_Free(self.neighborhood_array)
-        
-        bitset_free(self.filled_set)
-        bitset_free(self.vertices_to_check)
-        bitset_free(self.vertices_to_recheck)
-        bitset_free(self.filled_neighbors)
-        bitset_free(self.unfilled_neighbors)
-        bitset_free(self.filled_neighbors_of_vx_to_fill)
-        bitset_free(self.meta_vertex)
 
     cdef void initialize_neighbors(self, graph_copy):
         cdef size_t i
@@ -118,43 +132,38 @@ cdef class ZFSearchMetagraph:
         cdef bitset_t initially_filled_subset
         cdef bitset_t vxs_to_add
         
-        bitset_clear(self.filled_set)
-        bitset_clear(self.vertices_to_check)
-        bitset_clear(self.vertices_to_recheck)
-        bitset_clear(self.filled_neighbors)
-        bitset_clear(self.unfilled_neighbors)
-        bitset_clear(self.filled_neighbors_of_vx_to_fill)
+        self.ec_bitsets.clear_all()
         
-        bitset_union(self.filled_set, &initially_filled_subset2._bitset[0], &vxs_to_add2._bitset[0])
+        bitset_union(self.ec_bitsets.filled_set, &initially_filled_subset2._bitset[0], &vxs_to_add2._bitset[0])
 
-        bitset_copy(self.vertices_to_check, &vxs_to_add2._bitset[0])
+        bitset_copy(self.ec_bitsets.vertices_to_check, &vxs_to_add2._bitset[0])
 
         for v in range(self.num_vertices):
             if bitset_in(&vxs_to_add2._bitset[0], v):
-                bitset_intersection(self.filled_neighbors, self.neighborhood_array[v], self.filled_set)
-                bitset_union(self.vertices_to_check, self.vertices_to_check, self.filled_neighbors)
+                bitset_intersection(self.ec_bitsets.filled_neighbors, self.neighborhood_array[v], self.ec_bitsets.filled_set)
+                bitset_union(self.ec_bitsets.vertices_to_check, self.ec_bitsets.vertices_to_check, self.ec_bitsets.filled_neighbors)
             
-        bitset_clear(self.vertices_to_recheck)
-        while not bitset_isempty(self.vertices_to_check):
-            bitset_clear(self.vertices_to_recheck)
+        bitset_clear(self.ec_bitsets.vertices_to_recheck)
+        while not bitset_isempty(self.ec_bitsets.vertices_to_check):
+            bitset_clear(self.ec_bitsets.vertices_to_recheck)
             for vertex in range(self.num_vertices):
-                if bitset_in(self.vertices_to_check, vertex):
-                    bitset_intersection(self.filled_neighbors, self.neighborhood_array[vertex], self.filled_set)
-                    bitset_difference(self.unfilled_neighbors, self.neighborhood_array[vertex], self.filled_neighbors)
+                if bitset_in(self.ec_bitsets.vertices_to_check, vertex):
+                    bitset_intersection(self.ec_bitsets.filled_neighbors, self.neighborhood_array[vertex], self.ec_bitsets.filled_set)
+                    bitset_difference(self.ec_bitsets.unfilled_neighbors, self.neighborhood_array[vertex], self.ec_bitsets.filled_neighbors)
                     
-                    if bitset_len(self.unfilled_neighbors) == 1:
-                        self.vertex_to_fill = bitset_next(self.unfilled_neighbors, 0)
-                        bitset_add(self.vertices_to_recheck, self.vertex_to_fill)
+                    if bitset_len(self.ec_bitsets.unfilled_neighbors) == 1:
+                        self.vertex_to_fill = bitset_next(self.ec_bitsets.unfilled_neighbors, 0)
+                        bitset_add(self.ec_bitsets.vertices_to_recheck, self.vertex_to_fill)
                         
-                        bitset_intersection(self.filled_neighbors_of_vx_to_fill, self.neighborhood_array[self.vertex_to_fill], self.filled_set)
-                        bitset_remove(self.filled_neighbors_of_vx_to_fill, vertex)
-                        bitset_union(self.vertices_to_recheck, self.vertices_to_recheck, self.filled_neighbors_of_vx_to_fill)
+                        bitset_intersection(self.ec_bitsets.filled_neighbors_of_vx_to_fill, self.neighborhood_array[self.vertex_to_fill], self.ec_bitsets.filled_set)
+                        bitset_remove(self.ec_bitsets.filled_neighbors_of_vx_to_fill, vertex)
+                        bitset_union(self.ec_bitsets.vertices_to_recheck, self.ec_bitsets.vertices_to_recheck, self.ec_bitsets.filled_neighbors_of_vx_to_fill)
                         
-                        bitset_add(self.filled_set, self.vertex_to_fill)
-            bitset_copy(self.vertices_to_check, self.vertices_to_recheck)
+                        bitset_add(self.ec_bitsets.filled_set, self.vertex_to_fill)
+            bitset_copy(self.ec_bitsets.vertices_to_check, self.ec_bitsets.vertices_to_recheck)
 
         set_to_return = FrozenBitset(capacity=self.num_vertices)
-        bitset_copy(&set_to_return._bitset[0], self.filled_set)
+        bitset_copy(&set_to_return._bitset[0], self.ec_bitsets.filled_set)
         return set_to_return
     
 
@@ -170,9 +179,9 @@ cdef class ZFSearchMetagraph:
         bitset_copy(self.meta_vertex, &meta_vertex._bitset[0])
         
         for new_vx_to_make_force in self.vertices_set:
-            bitset_copy(self.unfilled_neighbors, self.neighborhood_array[new_vx_to_make_force])
-            bitset_difference(self.unfilled_neighbors, self.unfilled_neighbors, self.meta_vertex)
-            num_unfilled_neighbors = bitset_len(self.unfilled_neighbors)
+            bitset_copy(self.ec_bitsets.unfilled_neighbors, self.neighborhood_array[new_vx_to_make_force])
+            bitset_difference(self.ec_bitsets.unfilled_neighbors, self.ec_bitsets.unfilled_neighbors, self.meta_vertex)
+            num_unfilled_neighbors = bitset_len(self.ec_bitsets.unfilled_neighbors)
 
             cost = num_unfilled_neighbors
             if num_unfilled_neighbors > 0:
