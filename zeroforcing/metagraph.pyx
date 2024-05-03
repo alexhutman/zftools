@@ -134,12 +134,12 @@ cdef class ZFSearchMetagraph:
         
         self.ec_bitsets.clear_all()
         
-        bitset_union(self.ec_bitsets.filled_set, &initially_filled_subset2._bitset[0], &vxs_to_add2._bitset[0])
+        bitset_union(self.ec_bitsets.filled_set, initially_filled_subset2._bitset, vxs_to_add2._bitset)
 
-        bitset_copy(self.ec_bitsets.vertices_to_check, &vxs_to_add2._bitset[0])
+        bitset_copy(self.ec_bitsets.vertices_to_check, vxs_to_add2._bitset)
 
         for v in range(self.num_vertices):
-            if bitset_in(&vxs_to_add2._bitset[0], v):
+            if bitset_in(vxs_to_add2._bitset, v):
                 bitset_intersection(self.ec_bitsets.filled_neighbors, self.neighborhood_array[v], self.ec_bitsets.filled_set)
                 bitset_union(self.ec_bitsets.vertices_to_check, self.ec_bitsets.vertices_to_check, self.ec_bitsets.filled_neighbors)
             
@@ -163,7 +163,7 @@ cdef class ZFSearchMetagraph:
             bitset_copy(self.ec_bitsets.vertices_to_check, self.ec_bitsets.vertices_to_recheck)
 
         set_to_return = FrozenBitset(capacity=self.num_vertices)
-        bitset_copy(&set_to_return._bitset[0], self.ec_bitsets.filled_set)
+        bitset_copy(set_to_return._bitset, self.ec_bitsets.filled_set)
         return set_to_return
     
 
@@ -176,7 +176,7 @@ cdef class ZFSearchMetagraph:
         cdef size_t i
         cdef size_t num_unfilled_neighbors
 
-        bitset_copy(self.meta_vertex, &meta_vertex._bitset[0])
+        bitset_copy(self.meta_vertex, meta_vertex._bitset)
         
         for new_vx_to_make_force in self.vertices_set:
             bitset_copy(self.ec_bitsets.unfilled_neighbors, self.neighborhood_array[new_vx_to_make_force])
