@@ -112,8 +112,6 @@ cdef class ZFSearchMetagraph:
     cdef void initialize_neighborhood_array(self, graph_copy):
         cdef size_t vertex, neighbor
         for vertex in range(self.num_vertices):
-            bitset_init(self.neighborhood_array[vertex], self.num_vertices)
-            bitset_clear(self.neighborhood_array[vertex])
             for neighbor in graph_copy.neighbor_iterator(vertex):
                 bitset_add(self.neighborhood_array[vertex], neighbor)
 
