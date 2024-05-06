@@ -66,8 +66,6 @@ cdef class ExtendClosureBitsets:
 
 
 cdef class ZFSearchMetagraph:
-    __slots__ = ("num_vertices", "vertex_to_fill", "neighbors_dict", "closed_neighborhood_list", "orig_to_relabeled_verts", "relabeled_to_orig_verts", "vertices_set")
-
     def __cinit__(self, object graph_for_zero_forcing not None):
         self.num_vertices = (<CGraphBackend>graph_for_zero_forcing._backend).cg().num_verts
         self.ec_bitsets = ExtendClosureBitsets(self.num_vertices)
