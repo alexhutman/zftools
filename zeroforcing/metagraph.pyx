@@ -35,6 +35,8 @@ from zeroforcing.fastqueue cimport FastQueueForBFS
 cdef class ExtendClosureBitsets:
     def __cinit__(self, size_t num_vertices):
         # TODO: Figure out how to have less verbosity here?
+        bitset_init(self.initially_filled_subset, num_vertices)
+        bitset_init(self.vxs_to_add, num_vertices)
         bitset_init(self.filled_set, num_vertices)
         bitset_init(self.vertices_to_check, num_vertices)
         bitset_init(self.vertices_to_recheck, num_vertices)
@@ -42,10 +44,9 @@ cdef class ExtendClosureBitsets:
         bitset_init(self.unfilled_neighbors, num_vertices)
         bitset_init(self.filled_neighbors_of_vx_to_fill, num_vertices)
 
-        bitset_init(self.initially_filled_subset, num_vertices)
-        bitset_init(self.vxs_to_add, num_vertices)
-
     def __dealloc__(self):
+        bitset_free(self.initially_filled_subset)
+        bitset_free(self.vxs_to_add)
         bitset_free(self.filled_set)
         bitset_free(self.vertices_to_check)
         bitset_free(self.vertices_to_recheck)
@@ -53,19 +54,15 @@ cdef class ExtendClosureBitsets:
         bitset_free(self.unfilled_neighbors)
         bitset_free(self.filled_neighbors_of_vx_to_fill)
 
-        bitset_free(self.initially_filled_subset)
-        bitset_free(self.vxs_to_add)
-
     cdef void clear_all(self):
+        bitset_clear(self.initially_filled_subset)
+        bitset_clear(self.vxs_to_add)
         bitset_clear(self.filled_set)
         bitset_clear(self.vertices_to_check)
         bitset_clear(self.vertices_to_recheck)
         bitset_clear(self.filled_neighbors)
         bitset_clear(self.unfilled_neighbors)
         bitset_clear(self.filled_neighbors_of_vx_to_fill)
-
-        bitset_clear(self.initially_filled_subset)
-        bitset_clear(self.vxs_to_add)
 
 
 cdef class ZFSearchMetagraph:
