@@ -77,6 +77,13 @@ cdef class ZFSearchMetagraph:
         for vertex in range(self.num_vertices):
             bitset_init(self.neighborhood_array[vertex], self.num_vertices)
 
+    def __dealloc__(self):
+        bitset_free(self.meta_vertex)
+
+        for vertex in range(self.num_vertices):
+            bitset_free(self.neighborhood_array[vertex])
+        PyMem_Free(self.neighborhood_array)
+
     def __init__(self, graph_for_zero_forcing not None):
         graph_copy = graph_for_zero_forcing.copy(immutable=False)
         self.orig_to_relabeled_verts = graph_copy.relabel(inplace=True, return_map=True)
@@ -88,13 +95,6 @@ cdef class ZFSearchMetagraph:
 
         self.initialize_neighbors(graph_copy)
         self.initialize_neighborhood_array(graph_copy)
-
-    def __dealloc__(self):
-        bitset_free(self.meta_vertex)
-
-        for vertex in range(self.num_vertices):
-            bitset_free(self.neighborhood_array[vertex])
-        PyMem_Free(self.neighborhood_array)
 
     cdef void initialize_neighbors(self, graph_copy):
         cdef size_t i
