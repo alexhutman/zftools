@@ -253,21 +253,23 @@ def _get_setup_parameters(extensions, zf_args, setup_args):
     }
 
     if zf_args.subcommand == get_enum_val(ZeroForcingArguments.BUILD_EXT).title:
+        force_release_ext_names = {"test.verifiability.wavefront"}
+        debug_exts = [ext for ext in extensions if zf_args.debug and ext.name not in force_release_ext_names]
+        release_exts = [ext for ext in extensions if ext.name not in {e.name for e in debug_exts}]
         comp_directives = {"language_level": zf_args.compiler_lang}
 
-        if zf_args.debug:
-            print("Compiling in debug mode")
-            comp_directives.update({"profile": True, "linetrace": True})
-            exts_to_skip = {"test.wavefront"}
-
-            def should_compile_in_debug_mode(ext):
-                return ext.name not in exts_to_skip
-
-            for ext in filter(should_compile_in_debug_mode, extensions):
+        cythonized = []
+        if debug_exts:
+            for ext in debug_exts:
                 ext.define_macros = [("CYTHON_TRACE", 1)]
+            print(f"Compiling the following extensions in debug mode: {', '.join((ext.name for ext in debug_exts))}")
+            cythonized.extend(cythonize(debug_exts, compiler_directives={**comp_directives, "linetrace": True}))
 
-        # Only Cythonize if we're calling build_ext
-        setup_params.update({"ext_modules": cythonize(extensions, compiler_directives=comp_directives)})
+        if release_exts:
+            print(f"Compiling the following extensions in release mode: {', '.join((ext.name for ext in release_exts))}")
+            cythonized.extend(cythonize(release_exts, compiler_directives=comp_directives))
+
+        setup_params.update({"ext_modules": cythonized})
     return setup_params
 
 
