@@ -1,4 +1,4 @@
-FROM sagemath/sagemath:10.1
+FROM sagemath/sagemath:10.3
 
 ARG ZF_BUILD_ARGS
 
