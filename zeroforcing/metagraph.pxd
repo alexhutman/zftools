@@ -32,7 +32,7 @@ cdef class ZFSearchMetagraph:
         void initialize_neighbors(self, object)
         void initialize_neighborhood_array(self, object)
         FrozenBitset extend_closure(self, FrozenBitset, FrozenBitset)
-        void neighbors_with_edges_add_to_queue(self, FrozenBitset, FastQueueForBFS, size_t)
+        void neighbors_with_edges_add_to_queue(self, FastQueueForBFS, FrozenBitset, size_t)
         set build_zf_set(self, list)
 
         object __to_orig_metavertex_iter(self, object)

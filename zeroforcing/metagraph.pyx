@@ -148,7 +148,7 @@ cdef class ZFSearchMetagraph:
         return set_to_return
     
 
-    cdef void neighbors_with_edges_add_to_queue(self, FrozenBitset meta_vertex, FastQueueForBFS queue, size_t previous_cost):
+    cdef void neighbors_with_edges_add_to_queue(self, FastQueueForBFS queue, FrozenBitset meta_vertex, size_t previous_cost):
         # verify that 'meta_vertex' is actually a subset of the vertices
         # of self.primal_graph, to be interpreted as the filled subset
         cdef size_t new_vx_to_make_force, cost, i, num_unfilled_neighbors
@@ -217,7 +217,7 @@ cdef class ZFSearchMetagraph:
                     current: (start_metavertex, None)
                     }
 
-        self.neighbors_with_edges_add_to_queue(current, unvisited_queue, 0)
+        self.neighbors_with_edges_add_to_queue(unvisited_queue, current, 0)
         while current != target_metavertex:
             current_distance, unvisited_metavx = unvisited_queue.pop_and_get_priority()
             parent, vx_to_force = unvisited_metavx # Previous closure, added vertex
@@ -227,7 +227,7 @@ cdef class ZFSearchMetagraph:
                 continue
 
             previous[current] = (parent, vx_to_force)
-            self.neighbors_with_edges_add_to_queue(current, unvisited_queue, current_distance)
+            self.neighbors_with_edges_add_to_queue(unvisited_queue, current, current_distance)
                 
         # Can this be simpler by making this a linked list instead? It would be more like a graph imo
         cdef:
