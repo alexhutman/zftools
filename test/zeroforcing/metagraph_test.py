@@ -41,7 +41,10 @@ class DijkstraTest:
         self.graph = graph
         self.metagraph = ZFSearchMetagraph(graph)
         self.all_filled = self.metagraph.to_relabeled_metavertex(graph.vertices(sort=False))
-        self.wavefront_zf_number, self.wavefront_zf_set, _, _ = zero_forcing_set_wavefront(graph)
+
+    def calculate_wavefront_zf_set(self):
+        _, wavefront_zf_set, _, _ = zero_forcing_set_wavefront(self.graph)
+        return wavefront_zf_set
 
     def force_zeroly(self, relabelled_start_metavertex):
         relabeled_graph = self.graph.relabel(inplace=False)
@@ -91,10 +94,11 @@ def test_all_graphs(testcase, profiler):
 
     zf_set_relabeled = testcase.metagraph.to_relabeled_metavertex(zf_set)
     forced_to_completion = testcase.force_zeroly(zf_set_relabeled)
+    wavefront_zf_set = testcase.calculate_wavefront_zf_set()
 
     assert forced_to_completion == testcase.all_filled
-    assert testcase.force_zeroly(testcase.wavefront_zf_set) == testcase.all_filled
-    assert len(zf_set) == testcase.wavefront_zf_number
+    assert testcase.force_zeroly(wavefront_zf_set) == testcase.all_filled
+    assert len(zf_set) == len(wavefront_zf_set)
 
 
 def main():
