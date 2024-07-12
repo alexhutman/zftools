@@ -101,8 +101,8 @@ cdef class ZFSearchMetagraph:
         for i in self.vertices_set:
             #TODO: Only so Dijkstra code doesn't break. Ideally want to remove this somehow
             neighbors = graph_copy.neighbors(i)
-            self.neighbors_dict[i] = FrozenBitset(neighbors,capacity=self.num_vertices)
-            self.closed_neighborhood_list[i] = FrozenBitset(neighbors + [i],capacity=self.num_vertices)
+            self.neighbors_dict[i] = FrozenBitset(neighbors, capacity=self.num_vertices)
+            self.closed_neighborhood_list[i] = FrozenBitset(neighbors + [i], capacity=self.num_vertices)
 
     cdef void initialize_neighborhood_array(self, graph_copy):
         cdef size_t vertex, neighbor
