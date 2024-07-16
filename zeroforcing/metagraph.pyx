@@ -32,6 +32,17 @@ from cpython.mem cimport (
 from zeroforcing.fastqueue cimport FastQueueForBFS
 
 
+def zero_forcing_set(sage_graph):
+    cdef:
+        ZFSearchMetagraph metagraph = ZFSearchMetagraph(sage_graph)
+        frozenset start = frozenset()
+        frozenset end = frozenset(metagraph.to_relabeled_metavertex(sage_graph.vertices(sort=False)))
+
+    return metagraph.dijkstra(start, end)
+
+def zero_forcing_number(sage_graph):
+    return len(zero_forcing_set(sage_graph))
+
 cdef class ExtendClosureBitsets:
     def __cinit__(self, size_t num_vertices):
         # TODO: Figure out how to have less verbosity here?
