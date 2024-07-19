@@ -1,0 +1,16 @@
+[project]
+name = "zfn"
+version = "0.1"
+
+[project.optional-dependencies]
+dev = ["Cython>=3.0.0", "setuptools"]
+
+[build-system]
+requires = ["setuptools>=61", "Cython>=3.0.0"]
+build-backend = "setuptools.build_meta"
+
+#[tool.setuptools.package-data]
+#zfn = ["*.c", "*.pxd"]
+
+#[tool.setuptools.exclude-package-data]
+#zfn = ["*.c"]
