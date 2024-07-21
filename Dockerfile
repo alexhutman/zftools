@@ -14,5 +14,5 @@ RUN : \
     && sage -pip install dist/zeroforcing*
     #&& sage --python3 setup.py sdist bdist_wheel
 
-#ENTRYPOINT sage --python3 -m pytest -x --profile
-ENTRYPOINT /bin/bash
+ENTRYPOINT sage --python3 -m pytest -x --profile
+#ENTRYPOINT /bin/bash
