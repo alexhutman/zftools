@@ -10,8 +10,8 @@ RUN : \
     && sage -pip install -r test/requirements.txt \
     && sage --python3 setup.py sdist \
     && echo "HELLO FROM DOCKERFILE" \
-    && tar -tf dist/zfn* \
-    && sage -pip install dist/zfn*
+    && tar -tf dist/zeroforcing* \
+    && sage -pip install dist/zeroforcing*
     #&& sage --python3 setup.py sdist bdist_wheel
 
 #ENTRYPOINT sage --python3 -m pytest -x --profile
