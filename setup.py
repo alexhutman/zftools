@@ -19,6 +19,7 @@ def get_setup_parameters(extensions):
         "description": "Find the zero forcing set of graphs.",
         "packages": ["zeroforcing"],
         "package_data": {"zeroforcing": ["*.pxd"]},
+        "package_dir": {"": "src"},
         "ext_modules": extensions,
         "install_requires": ["setuptools>=60.0", "sagemath-standard", "Cython"],
         "extras_require": { "dev": ['pytest'] }
@@ -39,8 +40,8 @@ def get_setup_parameters(extensions):
 
 def main():
     extensions = [
-        Extension("zeroforcing.fastqueue", sources=["zeroforcing/fastqueue.pyx"]),
-        Extension("zeroforcing.metagraph", sources=["zeroforcing/metagraph.pyx"]),
+        Extension("zeroforcing.fastqueue", sources=["src/zeroforcing/fastqueue.pyx"]),
+        Extension("zeroforcing.metagraph", sources=["src/zeroforcing/metagraph.pyx"]),
         # TODO: Add flag whether or not to compile this
         Extension("zeroforcing.test.verifiability.wavefront", sources=["test/verifiability/wavefront.pyx"]),
     ]
