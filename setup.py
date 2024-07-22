@@ -11,7 +11,12 @@ class no_egg(_bdist_egg):
 def get_setup_parameters(extensions):
     setup_params = {
         "name": "zeroforcing",
-        "version": "0.1",
+        "author": "Alexander Hutman, Louis Deaett",
+        "license": "GPLv3",
+        "license_files": ["LICENSE"],
+        "version": "0.1.0",
+        "url": "https://github.com/alexhutman/ZeroForcingNumber",
+        "description": "Find the zero forcing set of graphs.",
         "packages": ["zeroforcing"],
         "package_data": {"zeroforcing": ["*.pxd"]},
         "ext_modules": extensions,
