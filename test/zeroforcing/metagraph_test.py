@@ -3,7 +3,7 @@ from contextlib import contextmanager
 import pytest
 
 from sage.graphs.graph_generators import GraphGenerators
-from test.verifiability.wavefront import zero_forcing_set_wavefront  # Make optional?
+from zeroforcing.test.verifiability.wavefront import zero_forcing_set_wavefront  # Make optional?
 from zeroforcing.metagraph import ZFSearchMetagraph
 
 
