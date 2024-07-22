@@ -15,7 +15,7 @@ def get_setup_parameters(extensions):
         "packages": ["zeroforcing"],
         "package_data": {"zeroforcing": ["*.pxd"]},
         "ext_modules": extensions,
-        "install_requires": ["setuptools>=60.0"],
+        "install_requires": ["setuptools>=60.0", "sagemath-standard", "Cython"],
         "extras_require": { "dev": ['pytest'] }
     }
 
