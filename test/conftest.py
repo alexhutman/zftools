@@ -71,7 +71,7 @@ def pytest_runtest_makereport(item, call):  # https://stackoverflow.com/a/517146
         result.sections.append(section)
 
 
-def pytest_report_header(config, start_path, startdir):
+def pytest_report_header(config, start_path):
     should_profile = config.getoption(_SHOULD_PROFILE_FLAG)
     print(f"{_PROFILER_ENABLED_TAG}:", should_profile)
 
