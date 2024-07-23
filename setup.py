@@ -1,3 +1,5 @@
+from os.path import join as opj
+
 from setuptools import setup, Extension, find_packages
 from setuptools.command.bdist_egg import bdist_egg as _bdist_egg
 
@@ -20,7 +22,7 @@ class build_wavefront(_build_ext):
         super().initialize_options()
         ext_name = "zeroforcing.test.verifiability.wavefront"
         self.distribution.packages = [ext_name]
-        self.distribution.ext_modules = [Extension(ext_name, sources=["test/verifiability/wavefront.pyx"])]
+        self.distribution.ext_modules = [Extension(ext_name, sources=[opj("test", "verifiability", "wavefront.pyx")])]
 
 
 def get_setup_parameters(extensions):
