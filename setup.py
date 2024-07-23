@@ -22,7 +22,7 @@ def get_setup_parameters(extensions):
         "package_dir": {"": "src"},
         "ext_modules": extensions,
         "install_requires": ["setuptools>=60.0", "sagemath-standard", "Cython"],
-        "extras_require": { "dev": ['pytest'] }
+        "extras_require": { "test": ['pytest'] }
     }
 
     cmdclass = {"bdist_egg": no_egg}
