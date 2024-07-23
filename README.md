@@ -24,7 +24,7 @@ This program calculates the zero forcing number (and set) of any graph. The zero
 * `-h` flag will show a section called `Zero forcing options:`
 
 ### Import
-`from zeroforcing.metagraph import zero_forcing_set`
+`from zeroforcing import *`
 
 ## Running in Docker
 1. Download Docker from the [Docker website](https://www.docker.com/)
