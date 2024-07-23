@@ -35,4 +35,4 @@ jobs:
         run: docker build . --file Dockerfile --tag "zeroforcing:${SHA}"
       - name: Test ZeroForcing code
         run: |
-            docker run --rm "zeroforcing:${SHA}" 'sage -pip install zeroforcing[test] && sage --python3 -m pytest --profile zeroforcing'
+            docker run --rm "zeroforcing:${SHA}" 'cd zeroforcing && sage --python3 setup.py wavefront && sage -pip install . && sage -pip install zeroforcing[test] && sage --python3 -m pytest --profile'
