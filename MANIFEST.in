@@ -1,4 +1,4 @@
+graft src
 graft test
-graft zeroforcing
 recursive-exclude * *.ipynb
 include tox.ini
