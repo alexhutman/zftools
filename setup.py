@@ -83,8 +83,8 @@ def get_setup_parameters(extensions):
 
 def main():
     extensions = [
-        Extension("zeroforcing.fastqueue", sources=["src/zeroforcing/fastqueue.pyx"]),
-        Extension("zeroforcing.metagraph", sources=["src/zeroforcing/metagraph.pyx"]),
+        Extension("zeroforcing.fastqueue", sources=[opj("src", "zeroforcing", "fastqueue.pyx")]),
+        Extension("zeroforcing.metagraph", sources=[opj("src", "zeroforcing", "metagraph.pyx")]),
     ]
 
     setup(**get_setup_parameters(extensions))
