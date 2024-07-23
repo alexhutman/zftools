@@ -19,9 +19,9 @@ class no_egg(_bdist_egg):
 
 class zf_cythonize(_build_ext):
     base_directives = dict(
-             binding=False,
-             language_level=3,
-            )
+         binding=False,
+         language_level=3,
+    )
     def run(self):
         dist = self.distribution
         ext_modules = dist.ext_modules
@@ -49,27 +49,35 @@ class build_wavefront(zf_cythonize):
 
 
 def get_setup_parameters(extensions):
-    setup_params = {
-        "name": "zeroforcing",
-        "author": "Alexander Hutman, Louis Deaett",
-        "license": "GPLv3",
-        "license_files": ["LICENSE"],
-        "version": "0.1.0",
-        "url": "https://github.com/alexhutman/ZeroForcingNumber",
-        "description": "Find the zero forcing set of graphs.",
-        "packages": find_packages(where='src'),
-        "package_data": {"zeroforcing": ["*.pxd"]},
-        "package_dir": {"": "src"},
-        "ext_modules": extensions,
-        "install_requires": ["setuptools>=60.0", "sagemath-standard", "Cython"],
-        "extras_require": { "test": ['pytest'] }
-    }
+    setup_params = dict(
+        name="zeroforcing",
+        author="Alexander Hutman, Louis Deaett",
+        license="GPLv3",
+        license_files=["LICENSE"],
+        version="0.1.0",
+        url="https://github.com/alexhutman/ZeroForcingNumber",
+        description="Find the zero forcing set of graphs.",
+        packages=find_packages(where='src'),
+        package_data={"zeroforcing": ["*.pxd"]},
+        package_dir={"": "src"},
+        ext_modules=extensions,
+        install_requires=["setuptools>=60.0", "sagemath-standard", "Cython"],
+        extras_require={ "test": ['pytest'] }
+    )
 
-    cmdclass = {"bdist_egg": no_egg, "build_ext": zf_cythonize}
+    cmdclass = dict(
+        bdist_egg=no_egg,
+        build_ext=zf_cythonize
+    )
     if SAGE_INSTALLED:
-        cmdclass.update({"build_cython": sage_build_cython, "wavefront": build_wavefront})
+        cmdclass.update(dict(
+            build_cython=sage_build_cython,
+            wavefront=build_wavefront
+        ))
 
-    setup_params.update({"cmdclass": cmdclass})
+    setup_params.update(dict(
+        cmdclass=cmdclass
+    ))
     return setup_params
 
 
