@@ -68,7 +68,7 @@ def get_setup_parameters(extensions):
         license="GNU General Public License, version 3",
         version="0.1.0",
         url="https://github.com/alexhutman/ZeroForcingNumber",
-        description="Find the zero forcing set of graphs.",
+        description="Find the zero forcing set of graphs",
         classifiers=classifiers,
         packages=find_packages(where='src'),
         package_data={"zeroforcing": ["*.pxd"]},
