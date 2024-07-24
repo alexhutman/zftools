@@ -63,6 +63,8 @@ class build_wavefront(zf_cythonize):
 with open("VERSION") as f:
     VERSION = f.read().strip()
 
+with open("README.md") as f:
+    README = f.read().strip()
 
 def get_setup_parameters(extensions):
     setup_params = dict(
@@ -72,6 +74,8 @@ def get_setup_parameters(extensions):
         version=VERSION,
         url="https://github.com/alexhutman/ZeroForcingNumber",
         description="Find the zero forcing set of graphs",
+        long_description=README,
+        long_description_content_type="text/markdown",
         classifiers=classifiers,
         packages=find_packages(where='src'),
         package_data={"zeroforcing": ["*.pxd"]},
