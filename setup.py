@@ -60,13 +60,16 @@ class build_wavefront(zf_cythonize):
         self.distribution.packages = [ext_name]
         self.distribution.ext_modules = [Extension(ext_name, sources=[opj("test", "verifiability", "wavefront.pyx")])]
 
+with open("VERSION") as f:
+    VERSION = f.read().strip()
+
 
 def get_setup_parameters(extensions):
     setup_params = dict(
         name="zeroforcing",
         author="Alexander Hutman, Louis Deaett",
         license="GNU General Public License, version 3",
-        version="0.1.0",
+        version=VERSION,
         url="https://github.com/alexhutman/ZeroForcingNumber",
         description="Find the zero forcing set of graphs",
         classifiers=classifiers,
