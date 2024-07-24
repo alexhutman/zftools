@@ -70,7 +70,6 @@ def get_setup_parameters(extensions):
     setup_params = dict(
         name="zeroforcing",
         author="Alexander Hutman, Louis Deaett",
-        license="GNU General Public License, version 3",
         version=VERSION,
         url="https://github.com/alexhutman/ZeroForcingNumber",
         description="Find the zero forcing set of graphs",
