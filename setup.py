@@ -3,6 +3,19 @@ from os.path import join as opj
 from setuptools import setup, Extension, find_packages
 from setuptools.command.bdist_egg import bdist_egg as _bdist_egg
 
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Other Environment",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Cython",
+    "Programming Language :: Python :: 3 :: Only",                 # Could experiment testing Python2 and exact versions but... why?
+    "Programming Language :: Python :: Implementation :: CPython", # Surely C extensions only work on CPython..?
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
 try:
     from sage_setup.command.sage_build_cython import sage_build_cython
     from sage_setup.command.sage_build_ext import sage_build_ext as _build_ext
@@ -56,12 +69,13 @@ def get_setup_parameters(extensions):
         version="0.1.0",
         url="https://github.com/alexhutman/ZeroForcingNumber",
         description="Find the zero forcing set of graphs.",
+        classifiers=classifiers,
         packages=find_packages(where='src'),
         package_data={"zeroforcing": ["*.pxd"]},
         package_dir={"": "src"},
         ext_modules=extensions,
         install_requires=["setuptools>=60.0", "sagemath-standard", "Cython"],
-        extras_require={ "test": ['pytest'] }
+        extras_require={ "test": ['pytest'] },
     )
 
     cmdclass = dict(
