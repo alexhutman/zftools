@@ -1,4 +1,8 @@
+global-include README.md VERSION LICENSE
+global-include setup.py
 graft src
 graft test
+prune build
+prune dist
 recursive-exclude * *.ipynb
 include tox.ini
