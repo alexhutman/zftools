@@ -18,4 +18,4 @@ jobs:
         run: docker build . --file Dockerfile --tag "zeroforcing:${SHA}"
       - name: Install lint requirements & Lint Cython code
         run: |
-            docker run --rm "zeroforcing:${SHA}" 'sage -pip install zeroforcing[lint] && cython-lint $(find zeroforcing/src/zeroforcing -type f \( -iname \*.pyx -o -iname \*.pxd \))'
+            docker run --rm "zeroforcing:${SHA}" 'sage -pip install zeroforcing[lint] && cython-lint $(find zeroforcing/src -type f \( -iname \*.pyx -o -iname \*.pxd \))'
