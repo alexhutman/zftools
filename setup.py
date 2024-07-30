@@ -81,7 +81,8 @@ def get_setup_parameters(extensions):
         package_dir={"": "src"},
         ext_modules=extensions,
         install_requires=["setuptools>=60.0", "sagemath-standard", "Cython"],
-        extras_require={ "test": ['pytest'] },
+        extras_require=dict(test=['pytest'],
+                            lint=['cython-lint']),
     )
 
     cmdclass = dict(
