@@ -1,12 +1,13 @@
 name: Lint code
 env:
   SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  CODE_DIR: /home/sage/zeroforcing
 on:
   workflow_run:
-    workflows: ["Build and Test"]
-    branches: [master]
-    event: pull_request
-    status: success
+    workflows:
+      - Build and Test
+    types:
+      - completed
 jobs:
   lint:
     runs-on:
@@ -22,4 +23,8 @@ jobs:
           docker load --input /tmp/zeroforcing-${{env.SHA}}.tar
       - name: Install lint requirements & Lint Cython code
         run: |
-            docker run --rm "zeroforcing:${SHA}" 'sage -pip install zeroforcing[lint] && cython-lint $(find zeroforcing/src -type f \( -iname \*.pyx -o -iname \*.pxd \))'
+            echo "CONTAINER_ID=$(docker run -d zeroforcing:${SHA})" >> $GITHUB_ENV
+        run: |
+            docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage -pip install 'zeroforcing[lint]'
+        run: |
+            docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" cython-lint '$(find zeroforcing/src -type f \( -iname \*.pyx -o -iname \*.pxd \))'
