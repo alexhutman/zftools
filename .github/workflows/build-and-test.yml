@@ -1,6 +1,7 @@
 name: Build and Test
 env:
   SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  CODE_DIR: /home/sage/zeroforcing
 on:
   push:
     branches:
@@ -57,6 +58,18 @@ jobs:
       - name: Load Docker image
         run: |
           docker load --input /tmp/zeroforcing-${{env.SHA}}.tar
+      - name: Run Docker image
+        run: |
+            echo "CONTAINER_ID=$(docker run -dt --entrypoint=/bin/sh zeroforcing:${SHA})" >> $GITHUB_ENV
+      - name: Build wavefront code
+        run: |
+            docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage --python3 setup.py wavefront
+      - name: Install wavefront code
+        run: |
+            docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage -pip install .
+      - name: Install test dependencies
+        run: |
+            docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage -pip install 'zeroforcing[test]'
       - name: Test ZeroForcing code
         run: |
-            docker run --rm "zeroforcing:${SHA}" 'cd zeroforcing && sage --python3 setup.py wavefront && sage -pip install . && sage -pip install zeroforcing[test] && sage --python3 -m pytest --profile'
+            docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage --python3 -m pytest --profile
