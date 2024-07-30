@@ -80,7 +80,7 @@ def get_setup_parameters(extensions):
         package_data={"zeroforcing": ["*.pxd"]},
         package_dir={"": "src"},
         ext_modules=extensions,
-        install_requires=["setuptools>=60.0", "sagemath-standard", "Cython"],
+        install_requires=["setuptools>=60.0", "Cython"],
         extras_require=dict(test=['pytest'],
                             lint=['cython-lint']),
     )
