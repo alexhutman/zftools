@@ -24,15 +24,39 @@ jobs:
         with:
           concurrent_skipping: 'same_content_newer'
           paths_ignore: '["**/README.md", "**/docs/**"]'
-  build_and_test:
+  build:
     needs: dedupe
+    runs-on: ubuntu-latest
     if: needs.dedupe.outputs.should_skip != 'true'
-    runs-on:
-      - ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Build the ZeroForcing Docker image
-        run: docker build . --file Dockerfile --tag "zeroforcing:${SHA}"
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3.6.1
+    - name: Build and push the ZeroForcing Docker image
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Dockerfile
+        tags: zeroforcing:${{env.SHA}}
+        outputs: type=docker,dest=/tmp/zeroforcing-${{env.SHA}}.tar
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: zeroforcing-${{env.SHA}}
+        path: /tmp/zeroforcing-${{env.SHA}}.tar
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: zeroforcing-${{env.SHA}}
+          path: /tmp
+      - name: Load Docker image
+        run: |
+          docker load --input /tmp/zeroforcing-${{env.SHA}}.tar
       - name: Test ZeroForcing code
         run: |
             docker run --rm "zeroforcing:${SHA}" 'cd zeroforcing && sage --python3 setup.py wavefront && sage -pip install . && sage -pip install zeroforcing[test] && sage --python3 -m pytest --profile'
