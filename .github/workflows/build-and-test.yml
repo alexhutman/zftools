@@ -20,7 +20,7 @@ jobs:
             echo "ref/sha = ${{ github.head_ref || github.ref_name }}/${{ github.event.pull_request.head.sha || github.sha }}"
       - id: skip_check
         name: Check for duplicate jobs
-        uses: fkirc/skip-duplicate-actions@v5.3.0
+        uses: fkirc/skip-duplicate-actions@v5.3.1
         with:
           concurrent_skipping: 'same_content_newer'
           paths_ignore: '["**/README.md", "**/docs/**"]'
@@ -30,7 +30,7 @@ jobs:
     if: needs.dedupe.outputs.should_skip != 'true'
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4.1.7
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3.6.1
     - name: Build and push the ZeroForcing Docker image
