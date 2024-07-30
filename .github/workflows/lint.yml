@@ -16,11 +16,6 @@ jobs:
       - uses: actions/checkout@v3
       - name: Build the ZeroForcing Docker image
         run: docker build . --file Dockerfile --tag "zeroforcing:${SHA}"
-      - name: Run container
-        run: echo "CONTAINER_ID=$(docker run --detach zeroforcing:${SHA})" >> $GITHUB_ENV
-      - name: Install lint requirements
+      - name: Install lint requirements & Lint Cython code
         run: |
-            docker exec "${CONTAINER_ID}" bash -c 'sage -pip install zeroforcing[lint]'
-      - name: Lint Cython code
-        run: |
-            docker exec "${CONTAINER_ID}" bash -c 'cython-lint $(find zeroforcing/src/zeroforcing -type f \( -iname \*.pyx -o -iname \*.pxd \))'
+            docker run --rm "zeroforcing:${SHA}" 'sage -pip install zeroforcing[lint] && cython-lint $(find zeroforcing/src/zeroforcing -type f \( -iname \*.pyx -o -iname \*.pxd \))'
