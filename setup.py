@@ -3,6 +3,7 @@ from os.path import join as opj
 from setuptools import setup, Extension, find_packages
 
 from build_helper import zf_cythonize, build_zf_code, build_wavefront, no_egg, InitZFBuild
+import os
 
 try:
     from sage_setup.command.sage_build_cython import sage_build_cython
@@ -29,6 +30,11 @@ with open("VERSION") as f:
 with open("README.md") as f:
     README = f.read().strip()
 
+def should_compile_wavefront():
+    # This is the best I can do rn...
+    # https://github.com/pypa/build/issues/328
+    return os.environ.get("COMPILE_WAVEFRONT", None) is not None
+
 def get_setup_parameters():
     setup_params = dict(
         name="zeroforcing",
@@ -49,7 +55,7 @@ def get_setup_parameters():
 
     cmdclass = dict(
         bdist_egg=no_egg,
-        build=InitZFBuild(build_wavefront=False),
+        build=InitZFBuild(build_wavefront=should_compile_wavefront()),
         build_ext=zf_cythonize,
         zeroforcing=build_zf_code,
         wavefront=build_wavefront,
