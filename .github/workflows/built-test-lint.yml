@@ -69,7 +69,7 @@ jobs:
             docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage -pip install .
       - name: Install test dependencies
         run: |
-            docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage -pip install 'zeroforcing[test]'
+            docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage -pip install '.[test]'
       - name: Test ZeroForcing code
         run: |
             docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage --python3 -m pytest --profile
@@ -91,7 +91,7 @@ jobs:
             echo "CONTAINER_ID=$(docker run -d zeroforcing:${SHA})" >> $GITHUB_ENV
       - name: Install lint requirements
         run: |
-            docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage -pip install 'zeroforcing[lint]'
+            docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage -pip install '.[lint]'
       - name: Lint Cython code
         run: |
             docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" cython-lint '$(find zeroforcing/src -type f \( -iname \*.pyx -o -iname \*.pxd \))'
