@@ -20,12 +20,13 @@ class zf_cythonize(_build_ext):
          binding=False,
          language_level=3,
     )
-    def finalize_options(self):
+    def initialize_options(self):
         dist = self.distribution
         ext_modules = dist.ext_modules
+        dist.packages = ["zeroforcing"]
         if ext_modules:
             dist.ext_modules[:] = self.cythonize(ext_modules)
-        super().finalize_options()
+        super().initialize_options()
 
     def cythonize(self, extensions):
         # Run Cython with -Werror on continuous integration services
@@ -44,7 +45,6 @@ class build_zf_code(zf_cythonize):
             Extension("zeroforcing.fastqueue", sources=[opj("src", "zeroforcing", "fastqueue.pyx")]),
             Extension("zeroforcing.metagraph", sources=[opj("src", "zeroforcing", "metagraph.pyx")]),
         ]
-        self.distribution.packages = ["zeroforcing"]
         super().initialize_options()
 
 class build_wavefront(zf_cythonize):
