@@ -73,3 +73,25 @@ jobs:
       - name: Test ZeroForcing code
         run: |
             docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage --python3 -m pytest --profile
+  lint:
+    needs: test
+    runs-on:
+      - ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: zeroforcing-${{env.SHA}}
+          path: /tmp
+      - name: Load Docker image
+        run: |
+          docker load --input /tmp/zeroforcing-${{env.SHA}}.tar
+      - name: Run Docker image
+        run: |
+            echo "CONTAINER_ID=$(docker run -d zeroforcing:${SHA})" >> $GITHUB_ENV
+      - name: Install lint requirements
+        run: |
+            docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage -pip install 'zeroforcing[lint]'
+      - name: Lint Cython code
+        run: |
+            docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" cython-lint '$(find zeroforcing/src -type f \( -iname \*.pyx -o -iname \*.pxd \))'
