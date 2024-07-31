@@ -20,12 +20,12 @@ class zf_cythonize(_build_ext):
          binding=False,
          language_level=3,
     )
-    def run(self):
+    def finalize_options(self):
         dist = self.distribution
         ext_modules = dist.ext_modules
         if ext_modules:
             dist.ext_modules[:] = self.cythonize(ext_modules)
-        super().run()
+        super().finalize_options()
 
     def cythonize(self, extensions):
         # Run Cython with -Werror on continuous integration services
