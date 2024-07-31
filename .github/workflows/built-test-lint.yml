@@ -91,7 +91,7 @@ jobs:
             echo "CONTAINER_ID=$(docker run -d zeroforcing:${SHA})" >> $GITHUB_ENV
       - name: Install lint requirements
         run: |
-            docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage -pip install '.[lint]'
+            docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage -pip install --editable '.[lint]'
       - name: Lint Cython code
         run: |
             docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" cython-lint '$(find zeroforcing/src -type f \( -iname \*.pyx -o -iname \*.pxd \))'
