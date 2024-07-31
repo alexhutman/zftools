@@ -55,9 +55,6 @@ jobs:
         with:
           name: zeroforcing-${{env.SHA}}
           path: /tmp
-      - name: Clear Docker cache + containers
-        run: |
-          docker system prune --all --force
       - name: Load Docker image
         run: |
           docker load --input /tmp/zeroforcing-${{env.SHA}}.tar
@@ -86,9 +83,6 @@ jobs:
         with:
           name: zeroforcing-${{env.SHA}}
           path: /tmp
-      - name: Clear Docker cache + containers
-        run: |
-          docker system prune --all --force
       - name: Load Docker image
         run: |
           docker load --input /tmp/zeroforcing-${{env.SHA}}.tar
