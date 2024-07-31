@@ -40,18 +40,18 @@ class zf_cythonize(_build_ext):
 
 class build_zf_code(zf_cythonize):
     def initialize_options(self):
-        super().initialize_options()
         self.distribution.ext_modules = [
             Extension("zeroforcing.fastqueue", sources=[opj("src", "zeroforcing", "fastqueue.pyx")]),
             Extension("zeroforcing.metagraph", sources=[opj("src", "zeroforcing", "metagraph.pyx")]),
         ]
         self.distribution.packages = ["zeroforcing"]
+        super().initialize_options()
 
 class build_wavefront(zf_cythonize):
     def initialize_options(self):
-        super().initialize_options()
         ext_name = "zeroforcing.test.verifiability.wavefront"
         self.distribution.ext_modules = [Extension(ext_name, sources=[opj("test", "verifiability", "wavefront.pyx")])]
+        super().initialize_options()
 
 class ZFBuild(build):
     @classmethod
