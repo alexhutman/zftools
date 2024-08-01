@@ -61,7 +61,7 @@ def get_setup_parameters():
         classifiers=classifiers,
         packages=find_packages(where='src'),
         package_data={"zeroforcing": ["*.pxd"]},
-        package_dir={"": "src", "zeroforcing.test": "test"},
+        package_dir={"": "src"},
         install_requires=["setuptools>=60.0", "Cython"],
         extras_require=dict(test=['pytest'],
                             lint=['cython-lint']),
