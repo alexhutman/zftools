@@ -1,15 +1,18 @@
+import logging
+import os
+
 from os.path import join as opj
 
 from setuptools import setup, Extension, find_packages
 
 from build_helper import zf_cythonize, build_zf_code, build_wavefront, no_egg, InitZFBuild
-import os
 
 try:
     from sage_setup.command.sage_build_cython import sage_build_cython
     SAGE_INSTALLED = True
 except ImportError:
     SAGE_INSTALLED = False
+
 
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -23,6 +26,17 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Mathematics",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
+
+def set_up_logger(level=logging.DEBUG):
+    logger = logging.getLogger(__name__)
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter(fmt='[%(levelname)s]: %(message)s')
+    handler.setFormatter(formatter)
+    handler.setLevel(level)
+    logger.addHandler(handler)
+    return logger
+
+logger = set_up_logger(logging.DEBUG)
 
 with open("VERSION") as f:
     VERSION = f.read().strip()
@@ -65,6 +79,9 @@ def get_setup_parameters():
         cmdclass.update(dict(
             build_cython=sage_build_cython,
         ))
+    else:
+        logger.warning("Sage is not detected. You will likely not be able to link"
+                       " against the required Sage libraries and get an error.")
 
     setup_params.update(dict(
         cmdclass=cmdclass
