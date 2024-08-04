@@ -29,4 +29,4 @@ jobs:
             docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage -pip install '.[lint]'
       - name: Lint Cython code
         run: |
-            docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" cython-lint '$(find zeroforcing/src -type f \( -iname \*.pyx -o -iname \*.pxd \))'
+            docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" cython-lint '$(find src -type f \( -iname \*.pyx -o -iname \*.pxd \))'
