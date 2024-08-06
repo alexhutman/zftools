@@ -5,4 +5,4 @@ RUN sage -pip install build
 COPY --chown=sage:sage . ./zeroforcing
 
 RUN sage --python3 -m build --no-isolation zeroforcing/
-RUN sage -pip install zeroforcing/
+RUN sage -pip install --no-cache-dir zeroforcing/dist/*.tar.gz
