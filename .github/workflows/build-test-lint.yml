@@ -71,6 +71,7 @@ jobs:
         run: |
             docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage --python3 -m pytest --profile
   lint:
+    needs: test
     runs-on:
       - ubuntu-latest
     steps:
