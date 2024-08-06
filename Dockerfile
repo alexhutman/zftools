@@ -1,6 +1,6 @@
 FROM sagemath/sagemath:10.3
 
-RUN sage -pip install build
+RUN sage -pip install --no-cache-dir build
 
 COPY --chown=sage:sage . ./zeroforcing
 
