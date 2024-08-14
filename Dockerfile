@@ -1,4 +1,4 @@
-FROM sagemath/sagemath:10.3
+FROM sagemath/sagemath:10.4
 
 RUN sage -pip install --no-cache-dir build
 
