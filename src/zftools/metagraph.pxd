@@ -1,7 +1,7 @@
 from sage.data_structures.bitset cimport Bitset, FrozenBitset
 from sage.data_structures.bitset_base cimport bitset_t
 
-from zeroforcing.fastqueue cimport FastQueueForBFS
+from zftools.fastqueue cimport FastQueueForBFS
 
 
 cdef class ExtendClosureBitsets:

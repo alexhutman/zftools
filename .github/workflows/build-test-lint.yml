@@ -1,7 +1,7 @@
 name: Build, Test, Lint
 env:
   SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-  CODE_DIR: /home/sage/zeroforcing
+  CODE_DIR: /home/sage/zftools
 on:
   push:
     branches:
@@ -34,18 +34,18 @@ jobs:
       uses: actions/checkout@v4.1.7
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3.6.1
-    - name: Build and push the ZeroForcing Docker image
+    - name: Build and push the zftools Docker image
       uses: docker/build-push-action@v6
       with:
         context: .
         file: ./Dockerfile
-        tags: zeroforcing:${{env.SHA}}
-        outputs: type=docker,dest=/tmp/zeroforcing-${{env.SHA}}.tar
+        tags: zftools:${{env.SHA}}
+        outputs: type=docker,dest=/tmp/zftools-${{env.SHA}}.tar
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: zeroforcing-${{env.SHA}}
-        path: /tmp/zeroforcing-${{env.SHA}}.tar
+        name: zftools-${{env.SHA}}
+        path: /tmp/zftools-${{env.SHA}}.tar
   test:
     needs: build
     runs-on: ubuntu-latest
@@ -53,21 +53,21 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: zeroforcing-${{env.SHA}}
+          name: zftools-${{env.SHA}}
           path: /tmp
       - name: Load Docker image
         run: |
-          docker load --input /tmp/zeroforcing-${{env.SHA}}.tar
+          docker load --input /tmp/zftools-${{env.SHA}}.tar
       - name: Run Docker image
         run: |
-            echo "CONTAINER_ID=$(docker run -dt --entrypoint=/bin/sh zeroforcing:${SHA})" >> $GITHUB_ENV
+            echo "CONTAINER_ID=$(docker run -dt --entrypoint=/bin/sh zftools:${SHA})" >> $GITHUB_ENV
       - name: Build wavefront code
         run: |
             docker exec -e COMPILE_WAVEFRONT=true --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage --python3 -m build --no-isolation
       - name: Install wavefront code + test dependencies
         run: |
             docker exec -e COMPILE_WAVEFRONT=true --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage -pip install --no-cache-dir '.[test]'
-      - name: Test ZeroForcing code
+      - name: Test zftools code
         run: |
             docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage --python3 -m pytest --profile
   lint:
@@ -78,14 +78,14 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: zeroforcing-${{env.SHA}}
+          name: zftools-${{env.SHA}}
           path: /tmp
       - name: Load Docker image
         run: |
-          docker load --input /tmp/zeroforcing-${{env.SHA}}.tar
+          docker load --input /tmp/zftools-${{env.SHA}}.tar
       - name: Run Docker image
         run: |
-            echo "CONTAINER_ID=$(docker run -d zeroforcing:${SHA})" >> $GITHUB_ENV
+            echo "CONTAINER_ID=$(docker run -d zftools:${SHA})" >> $GITHUB_ENV
       - name: Install lint requirements
         run: |
             docker exec --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage -pip install --no-cache-dir '.[lint]'

@@ -51,16 +51,16 @@ def should_compile_wavefront():
 
 def get_setup_parameters():
     setup_params = dict(
-        name="zeroforcing",
+        name="zftools",
         author="Alexander Hutman, Louis Deaett",
         version=VERSION,
-        url="https://github.com/alexhutman/ZeroForcingNumber",
+        url="https://github.com/alexhutman/zftools",
         description="Find the zero forcing set of graphs",
         long_description=README,
         long_description_content_type="text/markdown",
         classifiers=classifiers,
         packages=find_packages(where='src'),
-        package_data={"zeroforcing": ["*.pxd"]},
+        package_data={"zftools": ["*.pxd"]},
         package_dir={"": "src"},
         install_requires=["setuptools>=60.0", "Cython"],
         extras_require=dict(test=['pytest'],
@@ -71,7 +71,7 @@ def get_setup_parameters():
         bdist_egg=no_egg,
         build=InitZFBuild(build_wavefront=should_compile_wavefront()),
         build_ext=zf_cythonize,
-        zeroforcing=build_zf_code,
+        zftools=build_zf_code,
         wavefront=build_wavefront,
     )
 

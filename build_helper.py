@@ -23,7 +23,7 @@ class zf_cythonize(_build_ext):
     def initialize_options(self):
         dist = self.distribution
         ext_modules = dist.ext_modules
-        dist.packages = ["zeroforcing"]
+        dist.packages = ["zftools"]
         if ext_modules:
             dist.ext_modules[:] = self.cythonize(ext_modules)
         super().initialize_options()
@@ -42,21 +42,21 @@ class zf_cythonize(_build_ext):
 class build_zf_code(zf_cythonize):
     def initialize_options(self):
         self.distribution.ext_modules = [
-            Extension("zeroforcing.fastqueue", sources=[opj("src", "zeroforcing", "fastqueue.pyx")]),
-            Extension("zeroforcing.metagraph", sources=[opj("src", "zeroforcing", "metagraph.pyx")]),
+            Extension("zftools.fastqueue", sources=[opj("src", "zftools", "fastqueue.pyx")]),
+            Extension("zftools.metagraph", sources=[opj("src", "zftools", "metagraph.pyx")]),
         ]
         super().initialize_options()
 
 class build_wavefront(zf_cythonize):
     def initialize_options(self):
-        ext_name = "zeroforcing.test.verifiability.wavefront"
+        ext_name = "zftools.test.verifiability.wavefront"
         self.distribution.ext_modules = [Extension(ext_name, sources=[opj("test", "verifiability", "wavefront.pyx")])]
         super().initialize_options()
 
 class ZFBuild(build):
     @classmethod
     def get_additional_subcommands(cls, build_wavefront):
-        addtl_subcommands = [('zeroforcing', None)]
+        addtl_subcommands = [('zftools', None)]
         if build_wavefront:
             addtl_subcommands.append(('wavefront', None))
 

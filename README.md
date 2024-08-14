@@ -8,7 +8,7 @@ This program calculates the zero forcing number (and set) of any graph. The zero
 
 ## Install from PyPI
 ```bash
-sage -pip install -i https://test.pypi.org/simple/ zeroforcing
+sage -pip install -i https://test.pypi.org/simple/ zftools
 ```
 
 ## Install from source
@@ -19,7 +19,7 @@ sage -pip install .
 ## Test
 ### Install the dependencies for testing
 ```bash
-sage -pip install zeroforcing[test]
+sage -pip install zftools[test]
 ```
 
 ### Build the wavefront code for verification during tests
@@ -41,11 +41,11 @@ sage --python3 -m pytest [-x]
 
 ## Import
 ```python
-from zeroforcing import *
+from zftools import *
 ```
 
 ## Building/Running in Docker
 1. Download Docker from the [Docker website](https://www.docker.com/)
-2. Run `docker build -t zeroforcing .` in the directory this git repository is located in
-3. Run `docker run --rm -it zeroforcing`
+2. Run `docker build -t zftools .` in the directory this git repository is located in
+3. Run `docker run --rm -it zftools`
 4. The package should be automatically installed inside of the container and Sage should be running. Have fun!
