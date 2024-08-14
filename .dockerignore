@@ -1,7 +1,7 @@
 **/__pycache__
-src/zeroforcing.egg_info
-zeroforcing/**/*.c
-zeroforcing/**/*.so
+src/zftools.egg_info
+zftools/**/*.c
+zftools/**/*.so
 test/**/*.c
 test/**/*.so
 build/

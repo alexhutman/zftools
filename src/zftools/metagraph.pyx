@@ -28,7 +28,7 @@ from cpython.mem cimport (
     PyMem_Free
 )
 
-from zeroforcing.fastqueue cimport FastQueueForBFS
+from zftools.fastqueue cimport FastQueueForBFS
 
 
 def zero_forcing_set(sage_graph):
