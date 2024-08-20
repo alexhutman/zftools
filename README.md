@@ -68,7 +68,7 @@ pip install .
 2. Run `docker build -t zeroforcing .` in the directory this git repository is located in
     * You can specify `--build-arg ZF_BUILD_ARGS="--debug"` before the `-t` flag to build in debug mode
 3. Run `docker run --rm -it zeroforcing`
-4. Follow the "Usage" section
+4. Follow the "How to use" section
 
 
 ---
