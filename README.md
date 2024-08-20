@@ -24,36 +24,89 @@ The software is able to compute the zero forcing number very efficiently for mos
 
 ---
 
-## Install from PyPI
-```bash
-sage -pip install -i https://test.pypi.org/simple/ zftools
+
+### How to install:
+
+#### Option 1. Install through PyPI
+
+Type the line below into any cell in a SageMath Jupyter notebook:
+
+```
+%pip install --index-url https://test.pypi.org/simple/ zeroforcing==0.1.0
 ```
 
-## Install from source
-```bash
-sage -pip install .
+Alternatively, type the following at the command line in any terminal session:
+
+```
+sage -pip install --index-url https://test.pypi.org/simple/ zeroforcing==0.1.0
 ```
 
-## Test
-### Install the dependencies for testing
-```bash
-sage -pip install zftools[test]
+
+The code should download from PyPI and build using Cython. (If running on macOS, during the process you may be prompted to install the command line developer tools.  This is because installation involves compiling Cython code.)
+
+#### Option 2: Install from source
+
+Either use `git` to clone the repository into the directory in which your SageMath Jupyter notebook resides, or follow these steps:
+
+* Download the `.zip` file of the project from [the releases page](https://github.com/alexhutman/ZeroForcingNumber/releases).
+* Move the `.zip` file into the same directory as your SageMath Jupyter notebook.
+
+Into any cell in the notebook, execute this command:
+
+```
+!unzip ZeroForcingNumber-master.zip
+```
+Then execute this command:
+
+```
+pip install .
 ```
 
-### Build the wavefront code for verification during tests
-```bash
-sage --python3 setup.py wavefront
+#### Option 3: Run from Docker
+
+1. Obtain and install [Docker](https://www.docker.com/).
+2. Run `docker build -t zeroforcing .` in the directory this git repository is located in
+    * You can specify `--build-arg ZF_BUILD_ARGS="--debug"` before the `-t` flag to build in debug mode
+3. Run `docker run --rm -it zeroforcing`
+4. Follow the "Usage" section
+
+
+---
+
+### How to use:
+
+After installation, you *may* need to restart the kernel.  (Try this if the command below does not work.)
+
+Execute this command in any Sage cell:
+
+```
+from zeroforcing import *
 ```
 
-### Install the wavefront code we just built
-```bash
-sage -pip install .
+The functions `zero_forcing_set()` and `zero_forcing_number()` should now be available and can be applied to any Sage graph object.  For example:
+
+```
+G = graphs.PaleyGraph(61)
+zero_forcing_set(G)
 ```
 
-### Run the tests
-```bash
-sage --python3 -m pytest [-x]
-```
+
+
+
+
+---
+
+
+
+---
+
+### Build:
+`sage --python3 setup.py build_ext`
+
+
+
+### Test:
+`sage --python3 -m pytest [-x]`
 * `-x` flag makes pytest stop after the first failure
 * `-h` flag will show a section called `Zero forcing options:`
 
@@ -62,8 +115,8 @@ sage --python3 -m pytest [-x]
 from zftools import *
 ```
 
-## Building/Running in Docker
-1. Download Docker from the [Docker website](https://www.docker.com/)
-2. Run `docker build -t zftools .` in the directory this git repository is located in
-3. Run `docker run --rm -it zftools`
-4. The package should be automatically installed inside of the container and Sage should be running. Have fun!
+
+### Help:
+`sage --python3 setup.py -h`
+(You can also use the `-h` flag in subcommands. i.e. `sage --python3 setup.py build_ext -h`
+
