@@ -14,11 +14,13 @@ Given a finite graph, choose some vertices to be “filled” and then apply thi
 
 ### Method.
 
-The algorithm applied finds the least weight of a path in a directed, weighted “metagraph” in which each vertex represents a subset of vertices in the primal graph *G* (the one whose zero forcing number is desired) with the property that, when this subset is precisely the set of filled vertices, no vertex can force.  An arc of weight *w* is present from *X* to *Y* when it is possible to add *w* vertices to the initially filled set that produced *X* to obtain an initially filled set that produces *Y*.  (That is, it is possible to expand the size of the ultimately filled set from *X* to *Y* at the “cost” of filling *w* additional vertices at the beginning.)  Then the smallest total weight of a directed path from &empty; to *V(G)* in this metagraph is the zero forcing number of *G*.
+The algorithm applied finds the least weight of a path in a directed, weighted “metagraph” in which each vertex represents a subset of vertices in the primal graph *G* (the one whose zero forcing number is desired) with the property that, when this subset is precisely the set of filled vertices, no vertex can force.  An arc of weight *w* is present from *X* to *Y* when it is possible to add *w* vertices to the initially filled set that produced *X* to obtain an initially filled set that produces *Y*.  (That is, it is possible to expand the size of the ultimately filled set from *X* to *Y* at the “cost” of filling *w* additional vertices at the beginning.)  Then one can show that the smallest total weight of a directed path from &empty; to *V(G)* in this metagraph is the zero forcing number of *G*.
+
+The advantage to the above formalism is that it allows the zero forcing number to be computed using any of the standard algorithms for finding a path of smallest weight in a weighted directed graph.  In particular, in this implementation we use Dijkstra's Algorithm.
 
 ### Capabilities and limitations.
 
-The software is able to compute the zero forcing number very efficiently for most simple graphs.  Some graphs, such as stars, represent a weakness for the algorithm and may produce longer running times.  In addition, memory usage can be prodigious for very large graphs.  Steps are planned to address both of these limitations in the future.  For now, the algorithm is very quick for most graphs.  For example, for the Paley graph on 101 vertices, it is possible to compute the zero forcing number in a matter of seconds.
+The software is able to compute the zero forcing number very efficiently for most simple graphs.  Some graphs, such as stars, represent a weakness for the algorithm and may produce longer running times.  In addition, memory usage can be prodigious for very large graphs.  Steps are planned to address both of these limitations in the future.  For now, the algorithm is very quick for most graphs.  For example, for the Paley graph on 101 vertices, the zero forcing number can be computed in just a few seconds.
 
 ---
 
