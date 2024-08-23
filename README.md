@@ -98,17 +98,26 @@ zero_forcing_set(G)
 ## Other stuff:
 
 #### Build:
-`sage --python3 setup.py build_ext`
+1. Install the `build` module:
+    * ```bash
+      sage -pip install build
+      ```
 
-
+2. Build the project
+    * ```bash
+      sage --python3 -m build --no-isolation .
+      ```
+      * The `--no-isolation` flag is needed because the `build` module builds in a virtual environment by default. We need access to Sage's packages and environment variables to build.
 
 #### Test:
-`sage --python3 -m pytest [-x]`
-* `-x` flag makes pytest stop after the first failure
-* `-h` flag will show a section called `Zero forcing options:`
+1. Install the project, along with test dependencies:
+    * ```bash
+      COMPILE_WAVEFRONT=true sage -pip install .[test]
+      ```
+        * The `COMPILE_WAVEFRONT` flag enables compilation (and in this case, installation) of the wavefront code in order to verify our results.
 
-
-#### Help:
-`sage --python3 setup.py -h`
-(You can also use the `-h` flag in subcommands. i.e. `sage --python3 setup.py build_ext -h`
-
+2. Test the code:
+    * ```bash
+      sage --python3 -m pytest [-h]
+      ```
+        * `-h` flag will show more options, including a section called `Zero forcing options:`
