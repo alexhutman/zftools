@@ -2,6 +2,7 @@ name: Build, Test, Lint
 env:
   SHA: ${{ github.event.pull_request.head.sha || github.sha }}
   CODE_DIR: /home/sage/zftools
+  COMPILE_WAVEFRONT: true
 on:
   push:
     branches:
