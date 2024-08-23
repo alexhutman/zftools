@@ -61,9 +61,6 @@ jobs:
       - name: Run Docker image
         run: |
             echo "CONTAINER_ID=$(docker run -dt --entrypoint=/bin/sh zftools:${SHA})" >> $GITHUB_ENV
-      - name: Build wavefront code
-        run: |
-            docker exec -e COMPILE_WAVEFRONT=true --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage --python3 -m build --no-isolation
       - name: Install wavefront code + test dependencies
         run: |
             docker exec -e COMPILE_WAVEFRONT=true --workdir "${CODE_DIR}" "${CONTAINER_ID}" sage -pip install --no-cache-dir '.[test]'
