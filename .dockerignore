@@ -1,3 +1,4 @@
+.git/
 **/__pycache__
 src/zftools.egg_info
 zftools/**/*.c
