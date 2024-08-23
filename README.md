@@ -5,7 +5,7 @@
 This software provides very fast calculation of zero forcing parameters.  Currently, it is able to compute only the “original” zero forcing parameter, namely the **zero forcing number of a finite simple graph**, originally defined by the “Special Graphs Working Group” that formed during a 2006 workshop at the American Institute of Mathematics (AIM) in their paper:
 
 <ul>
-AIM Minimum Rank – Special Graphs Work Group. Zero forcing sets and the minimum rank of graphs. <i>Linear Algebra and its Applications</i>, 428(7):1628–1648 (2008). (<a href="https://doi.org/10.1016/j.laa.2007.10.009">https://doi.org/10.1016/j.laa.2007.10.009</a>)
+AIM Minimum Rank – Special Graphs Work Group. <a href="https://doi.org/10.1016/j.laa.2007.10.009">Zero forcing sets and the minimum rank of graphs</a>. <i>Linear Algebra and its Applications</i>, 428(7):1628–1648 (2008)
 </ul>
 
 ### Definition.
@@ -22,44 +22,43 @@ The advantage to the above formalism is that it allows the zero forcing number t
 
 The software is able to compute the zero forcing number very efficiently for most simple graphs.  Some graphs, such as stars, represent a weakness for the algorithm and may produce longer running times.  In addition, memory usage can be prodigious for very large graphs.  Steps are planned to address both of these limitations in the future.  For now, the algorithm is very quick for most graphs.  For example, for the Paley graph on 101 vertices, the zero forcing number can be computed in just a few seconds.
 
----
 
 
-### How to install:
+## How to install:
 
-#### Option 1. Install through PyPI
+#### Option 1: Install through PyPI
 
 Type the line below into any cell in a SageMath Jupyter notebook:
 
 ```
-%pip install --index-url https://test.pypi.org/simple/ zeroforcing==0.1.0
+%pip install zftools
 ```
 
 Alternatively, type the following at the command line in any terminal session:
 
 ```
-sage -pip install --index-url https://test.pypi.org/simple/ zeroforcing==0.1.0
+sage -pip install zftools
 ```
 
 
-The code should download from PyPI and build using Cython. (If running on macOS, during the process you may be prompted to install the command line developer tools.  This is because installation involves compiling Cython code.)
+The package should download from PyPI and build using Cython. (If running on macOS, during the process you may be prompted to install the command line developer tools.  This is because installation involves compiling Cython code.)
 
 #### Option 2: Install from source
 
 Either use `git` to clone the repository into the directory in which your SageMath Jupyter notebook resides, or follow these steps:
 
-* Download the `.zip` file of the project from [the releases page](https://github.com/alexhutman/ZeroForcingNumber/releases).
+* Download the `.zip` file of the project from [the releases page](https://github.com/alexhutman/zftools/releases).
 * Move the `.zip` file into the same directory as your SageMath Jupyter notebook.
 
 Into any cell in the notebook, execute this command:
 
 ```
-!unzip ZeroForcingNumber-master.zip
+!unzip zftools-master.zip
 ```
 Then execute this command:
 
 ```
-pip install .
+%pip install .
 ```
 
 #### Option 3: Run from Docker
@@ -71,16 +70,15 @@ pip install .
 4. Follow the "How to use" section
 
 
----
 
-### How to use:
+## How to use:
 
-After installation, you *may* need to restart the kernel.  (Try this if the command below does not work.)
+Immediately after installation, you may need to restart the kernel before you can use the package.  (Try this if the command below does not work.)
 
 Execute this command in any Sage cell:
 
 ```
-from zeroforcing import *
+from zftools import *
 ```
 
 The functions `zero_forcing_set()` and `zero_forcing_number()` should now be available and can be applied to any Sage graph object.  For example:
@@ -94,29 +92,23 @@ zero_forcing_set(G)
 
 
 
----
 
 
 
----
+## Other stuff:
 
-### Build:
+#### Build:
 `sage --python3 setup.py build_ext`
 
 
 
-### Test:
+#### Test:
 `sage --python3 -m pytest [-x]`
 * `-x` flag makes pytest stop after the first failure
 * `-h` flag will show a section called `Zero forcing options:`
 
-## Import
-```python
-from zftools import *
-```
 
-
-### Help:
+#### Help:
 `sage --python3 setup.py -h`
 (You can also use the `-h` flag in subcommands. i.e. `sage --python3 setup.py build_ext -h`
 
