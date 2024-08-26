@@ -49,10 +49,11 @@ The package should download from PyPI and build using Cython. (If running on mac
 
 ### Option 3: Run from Docker
 1. Obtain and install [Docker](https://www.docker.com/).
-2. Run `docker build -t zftools .` in the directory this git repository is located in
+2. Find the most recent [tag](https://hub.docker.com/r/alexhutman/zftools/tags) on the project's Docker repo, and run the command given. It should look like: `docker pull alexhutman/zftools:[tag-you-chose]`
+3. Alternatively, you can run `docker build -t zftools .` in the directory this git repository is located in to build the image from source
     * You can specify `--build-arg ZF_BUILD_ARGS="--debug"` before the `-t` flag to build in debug mode
-3. Run `docker run --rm -it zftools`
-4. Follow the "How to use" section
+4. Run `docker run --rm -it [IMAGE-NAME]`, where `[IMAGE-NAME]` is `alexhutman/zftools:[tag]` if you followed Step 2, and `zftools` if you followed Step 3.
+5. Follow the "How to use" section
 
 ## How to use:
 Immediately after installation, you may need to restart the kernel before you can use the package.  (Try this if the command below does not work.)
