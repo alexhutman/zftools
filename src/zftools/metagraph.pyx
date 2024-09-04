@@ -31,6 +31,13 @@ from cpython.mem cimport (
 from zftools.fastqueue cimport FastQueueForBFS
 
 
+def verify_graph_is_compatible(sage_graph):
+    if sage_graph.is_directed():
+        raise ValueError("This is a directed graph.  Currently, directed graph zero forcing is not implemented.")
+    elif sage_graph.has_loops():
+        raise ValueError("This graph has loops.  Currently, looped zero forcing is not implemented.")
+
+
 def zero_forcing_set(sage_graph):
     cdef:
         ZFSearchMetagraph metagraph = ZFSearchMetagraph(sage_graph)
@@ -38,7 +45,8 @@ def zero_forcing_set(sage_graph):
         frozenset end = frozenset(
                 metagraph.to_relabeled_metavertex(sage_graph.vertices(sort=False))
                 )
-
+    
+    verify_graph_is_compatible(sage_graph)
     return metagraph.dijkstra(start, end)
 
 
