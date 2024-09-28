@@ -31,23 +31,35 @@ from cpython.mem cimport (
 from zftools.fastqueue cimport FastQueueForBFS
 
 
-def verify_graph_is_compatible(sage_graph):
-    if sage_graph.is_directed():
-        raise ValueError("This is a directed graph.  Currently, directed graph zero forcing is not implemented.")
-    elif sage_graph.has_loops():
-        raise ValueError("This graph has loops.  Currently, looped zero forcing is not implemented.")
+class GraphIsDirectedError(NotImplementedError):
+    pass
+
+class GraphAllowsLoopsError(NotImplementedError):
+    pass
+
+
 
 
 def zero_forcing_set(sage_graph):
     cdef:
-        ZFSearchMetagraph metagraph = ZFSearchMetagraph(sage_graph)
-        frozenset start = frozenset()
-        frozenset end = frozenset(
-                metagraph.to_relabeled_metavertex(sage_graph.vertices(sort=False))
-                )
+        ZFSearchMetagraph metagraph
+        frozenset start
+        frozenset end
     
-    verify_graph_is_compatible(sage_graph)
-    return metagraph.dijkstra(start, end)
+    try:
+        metagraph = ZFSearchMetagraph(sage_graph)
+    except GraphIsDirectedError:
+        # This is where we will instantiate a metagraph
+        # for directed forcing
+        print("This is a directed graph.  Currently, directed graph zero forcing is not implemented.")
+    except GraphAllowsLoopsError:
+        # This is where we will instantiate a metagraph for
+        # an undirected graph with loops
+        print("This graph allows loops.  Currently, looped zero forcing is not implemented.")
+    else:
+        start = frozenset()
+        end = frozenset(metagraph.to_relabeled_metavertex(sage_graph.vertices(sort=False)))
+        return metagraph.dijkstra(start, end)
 
 
 def zero_forcing_number(sage_graph):
@@ -109,6 +121,11 @@ cdef class ZFSearchMetagraph:
         PyMem_Free(self.neighborhood_array)
 
     def __init__(self, graph_for_zero_forcing not None):
+        if graph_for_zero_forcing.is_directed():
+            raise GraphIsDirectedError
+        elif graph_for_zero_forcing.allows_loops():
+            raise GraphAllowsLoopsError
+
         graph_copy = graph_for_zero_forcing.copy(immutable=False)
         self.orig_to_relabeled_verts = graph_copy.relabel(inplace=True, return_map=True)
         self.relabeled_to_orig_verts = {
