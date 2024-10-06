@@ -49,13 +49,12 @@ def zero_forcing_set(sage_graph):
     try:
         metagraph = ZFSearchMetagraph(sage_graph)
     except GraphIsDirectedError:
-        # This is where we will instantiate a metagraph
-        # for directed forcing
-        print("This is a directed graph.  Currently, directed graph zero forcing is not implemented.")
+        # This is where we will instantiate a metagraph for directed forcing
+        raise NotImplementedError("This is a directed graph.  Currently, directed graph zero forcing is not implemented.")
     except GraphAllowsLoopsError:
-        # This is where we will instantiate a metagraph for
-        # an undirected graph with loops
-        print("This graph allows loops.  Currently, looped zero forcing is not implemented.")
+        # This is where we will instantiate a metagraph for (undirected)
+        # looped forcing
+        raise NotImplementedError("This graph allows loops.  Currently, looped zero forcing is not implemented.")
     else:
         start = frozenset()
         end = frozenset(metagraph.to_relabeled_metavertex(sage_graph.vertices(sort=False)))
