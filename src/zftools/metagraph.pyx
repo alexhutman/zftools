@@ -42,23 +42,13 @@ class GraphAllowsLoopsError(NotImplementedError):
 
 def zero_forcing_set(sage_graph):
     cdef:
-        ZFSearchMetagraph metagraph
-        frozenset start
-        frozenset end
-    
-    try:
-        metagraph = ZFSearchMetagraph(sage_graph)
-    except GraphIsDirectedError:
-        # This is where we will instantiate a metagraph for directed forcing
-        raise NotImplementedError("This is a directed graph.  Currently, directed graph zero forcing is not implemented.")
-    except GraphAllowsLoopsError:
-        # This is where we will instantiate a metagraph for (undirected)
-        # looped forcing
-        raise NotImplementedError("This graph allows loops.  Currently, looped zero forcing is not implemented.")
-    else:
-        start = frozenset()
-        end = frozenset(metagraph.to_relabeled_metavertex(sage_graph.vertices(sort=False)))
-        return metagraph.dijkstra(start, end)
+        ZFSearchMetagraph metagraph = ZFSearchMetagraph(sage_graph)
+        frozenset start = frozenset()
+        frozenset end = frozenset(
+                metagraph.to_relabeled_metavertex(sage_graph.vertices(sort=False))
+                )
+
+    return metagraph.dijkstra(start, end)
 
 
 def zero_forcing_number(sage_graph):
@@ -121,9 +111,9 @@ cdef class ZFSearchMetagraph:
 
     def __init__(self, graph_for_zero_forcing not None):
         if graph_for_zero_forcing.is_directed():
-            raise GraphIsDirectedError
+            raise GraphIsDirectedError("This is a directed graph. Currently, directed graph zero forcing is not implemented.")
         elif graph_for_zero_forcing.allows_loops():
-            raise GraphAllowsLoopsError
+            raise GraphAllowsLoopsError("This graph allows loops. Currently, looped zero forcing is not implemented.")
 
         graph_copy = graph_for_zero_forcing.copy(immutable=False)
         self.orig_to_relabeled_verts = graph_copy.relabel(inplace=True, return_map=True)
