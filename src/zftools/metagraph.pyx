@@ -31,6 +31,15 @@ from cpython.mem cimport (
 from zftools.fastqueue cimport FastQueueForBFS
 
 
+class GraphIsDirectedError(NotImplementedError):
+    pass
+
+class GraphAllowsLoopsError(NotImplementedError):
+    pass
+
+
+
+
 def zero_forcing_set(sage_graph):
     cdef:
         ZFSearchMetagraph metagraph = ZFSearchMetagraph(sage_graph)
@@ -101,6 +110,11 @@ cdef class ZFSearchMetagraph:
         PyMem_Free(self.neighborhood_array)
 
     def __init__(self, graph_for_zero_forcing not None):
+        if graph_for_zero_forcing.is_directed():
+            raise GraphIsDirectedError("This is a directed graph. Currently, directed graph zero forcing is not implemented.")
+        elif graph_for_zero_forcing.allows_loops():
+            raise GraphAllowsLoopsError("This graph allows loops. Currently, looped zero forcing is not implemented.")
+
         graph_copy = graph_for_zero_forcing.copy(immutable=False)
         self.orig_to_relabeled_verts = graph_copy.relabel(inplace=True, return_map=True)
         self.relabeled_to_orig_verts = {
