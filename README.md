@@ -23,12 +23,12 @@ The software is able to compute the zero forcing number very efficiently for mos
 ### Option 1: Install through PyPI
 Type the line below into any cell in a SageMath Jupyter notebook:
 ```
-%pip install zftools
+%pip install --no-build-isolation zftools
 ```
 
 Alternatively, type the following at the command line in any terminal session:
 ```bash
-sage -pip install zftools
+sage -pip install --no-build-isolation zftools
 ```
 
 The package should download from PyPI and build using Cython. (If running on macOS, during the process you may be prompted to install the command line developer tools.  This is because installation involves compiling Cython code.)
@@ -44,7 +44,7 @@ The package should download from PyPI and build using Cython. (If running on mac
 
 2. Execute this command:
     * ```
-      %pip install .
+      %pip install --no-build-isolation .
       ```
 
 ### Option 3: Run from Docker
@@ -87,7 +87,7 @@ zero_forcing_set(G)
 ### Test:
 1. Install the project, along with test dependencies:
     * ```bash
-      COMPILE_WAVEFRONT=true sage -pip install .[test]
+      COMPILE_WAVEFRONT=true sage -pip install --no-build-isolation .[test]
       ```
         * The `COMPILE_WAVEFRONT` flag enables compilation (and in this case, installation) of the wavefront code in order to verify our results.
 

@@ -1,0 +1,15 @@
+[build-system]
+# requirements to install when build isolation is in use
+requires = [
+    "setuptools",
+    "cython",
+    "pkgconfig",
+    "passagemath-setup",                # for sage_build_cython
+    "passagemath-environment",
+    "passagemath-categories",           # for bitset
+    "passagemath-graphs",
+]
+# We need access to the 'build_helper' module at build time.
+# Hence we declare a custom build backend.
+build-backend = "_build_meta"  # just re-exports setuptools.build_meta definitions
+backend-path = ["."]

@@ -1,5 +1,8 @@
 import logging
 import os
+import sys
+
+sys.path.insert(0, os.path.dirname(__file__))
 
 from os.path import join as opj
 
@@ -9,6 +12,8 @@ from build_helper import zf_cythonize, build_zf_code, build_wavefront, no_egg, I
 
 try:
     from sage_setup.command.sage_build_cython import sage_build_cython
+    import sage.env
+    sage.env.default_required_modules = sage.env.default_optional_modules = ()
     SAGE_INSTALLED = True
 except ImportError:
     SAGE_INSTALLED = False
@@ -62,9 +67,10 @@ def get_setup_parameters():
         packages=find_packages(where='src'),
         package_data={"zftools": ["*.pxd"]},
         package_dir={"": "src"},
-        install_requires=["setuptools>=60.0", "Cython"],
         extras_require=dict(test=['pytest'],
-                            lint=['cython-lint']),
+                            lint=['cython-lint'],
+                            passagemath=['passagemath-graphs',
+                                         'passagemath-repl'],),
     )
 
     cmdclass = dict(
